@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { TransactionResponse, CreateTransactionParams, UpdateTransactionParams, CategoryResponse, PaymentMethodResponse, CreateCategoryParams } from '@/types/transactions';
+import { TransactionResponse, CreateTransactionParams, UpdateTransactionParams, CategoryResponse, PaymentMethodResponse, CreateCategoryParams, ListTransactionParams } from '@/types/transactions';
 import { useTransactionStore } from '@/stores/transactionStore';
 import * as App from '../../../wailsjs/go/main/App';
 
@@ -180,14 +180,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           created_by: '',
           from_date: '',
           to_date: '',
-          type: '',
-          category: '',
-          payment_status: '',
           customer_vendor: '',
           search: '',
           limit: 5,
           offset: 0,
-        });
+        } as ListTransactionParams);
 
         if (recentTransactions && Array.isArray(recentTransactions)) {
           // Convert to suggestion format and remove duplicates
@@ -218,14 +215,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           created_by: '',
           from_date: '',
           to_date: '',
-          type: '',
-          category: '',
-          payment_status: '',
           customer_vendor: '',
           search: '',
           limit: 10,
           offset: 0,
-        });
+        } as ListTransactionParams);
 
         if (recentTransactions && Array.isArray(recentTransactions)) {
           // Convert to suggestion format and remove duplicates, filter out empty values
@@ -455,15 +449,15 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-0 shadow-2xl">
+        <DialogHeader className="pb-6">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle>{mode === 'create' ? 'Add New Transaction' : 'Edit Transaction'}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-2xl font-semibold text-gray-900">{mode === 'create' ? 'Add New Transaction' : 'Edit Transaction'}</DialogTitle>
+              <DialogDescription className="text-sm text-gray-500 mt-1">
                 {mode === 'create'
-                  ? 'Fill in the details to create a new transaction.'
-                  : 'Update the transaction details.'}
+                  ? 'Fill in the details to create a new transaction'
+                  : 'Update the transaction details'}
               </DialogDescription>
             </div>
             <Popover open={showFieldSettings} onOpenChange={setShowFieldSettings}>
@@ -488,7 +482,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   <p className="text-sm text-muted-foreground">
                     Choose which optional fields to show in the form
                   </p>
-                  <div className="space-y-3">
+                  <div className="space-y-1">
                     {[
                       { key: 'category', label: 'Category' },
                       { key: 'customer_vendor', label: 'Customer/Vendor' },
@@ -526,44 +520,45 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           {/* Transaction Type Selection */}
-          <div className="space-y-3">
-            <Label>Transaction Type</Label>
-            <div className="flex items-center bg-muted rounded-md p-1">
+          <div className="space-y-4">
+            <div className="grid grid-cols-4 gap-3">
               {typeOptions.map((option) => {
                 const IconComponent = option.icon;
                 const isActive = transactionType === option.value;
 
+                const colorMap = {
+                  income: isActive ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50',
+                  expense: isActive ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 border-gray-200 hover:border-red-300 hover:bg-red-50',
+                  sale: isActive ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50',
+                  purchase: isActive ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-700 border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                };
+
                 return (
-                  <Button
+                  <button
                     key={option.value}
                     type="button"
-                    variant="ghost"
-                    size="sm"
                     onClick={() => setValue('type', option.value as 'income' | 'expense' | 'sale' | 'purchase')}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 rounded-sm transition-all flex-1 border',
-                      isActive
-                        ? option.color.split(' ')[0] + ' bg-background shadow-md border-border hover:shadow-lg'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 border-muted'
+                      'flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 min-h-[80px]',
+                      colorMap[option.value as keyof typeof colorMap]
                     )}
                   >
-                    <IconComponent className="h-4 w-4" />
+                    <IconComponent className="h-6 w-6" />
                     <span className="text-sm font-medium">{option.label}</span>
-                  </Button>
+                  </button>
                 );
               })}
             </div>
             {errors.type && (
-              <p className="text-sm text-red-500">{errors.type.message}</p>
+              <p className="text-sm text-red-500 mt-2">{errors.type.message}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="transaction_date" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <Label htmlFor="transaction_date" className="text-sm font-medium text-gray-700">
                 Date
               </Label>
               <Popover>
@@ -571,12 +566,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   <Button
                     variant="outline"
                     className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
+                      'w-full justify-start text-left font-normal h-12 rounded-lg border-gray-200 bg-white hover:bg-gray-50 px-4',
+                      !date && 'text-gray-400'
                     )}
                   >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                    <Calendar className="mr-3 h-4 w-4 text-gray-400" />
+                    {date ? format(date, 'dd/MM/yyyy') : <span>17/09/2025</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -590,27 +585,36 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               </Popover>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+            <div className="space-y-1">
+              <Label htmlFor="amount" className="text-sm font-medium text-gray-700">
                 Amount
               </Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                {...register('amount', { valueAsNumber: true })}
-                placeholder="0.00"
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">$</span>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="1"
+                  min="0"
+                  {...register('amount', { valueAsNumber: true })}
+                  placeholder="0"
+                  className="h-12 pl-8 pr-4 rounded-lg border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-indigo-500"
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onKeyDown={(e) => {
+                    if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+              </div>
               {errors.amount && (
                 <p className="text-sm text-red-500">{errors.amount.message}</p>
               )}
             </div>
           </div>
 
-          <div className="space-y-2 relative">
-            <Label htmlFor="description" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
+          <div className="space-y-1 relative">
+            <Label htmlFor="description" className="text-sm font-medium text-gray-700">
               Description
             </Label>
             <div className="relative">
@@ -623,8 +627,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   // Delay hiding to allow clicking on suggestions
                   setTimeout(() => setShowDescriptionSuggestions(false), 150);
                 }}
-                placeholder="Enter transaction description"
+                placeholder="Enter transaction description..."
                 autoComplete="off"
+                className="h-12 px-4 rounded-lg border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-indigo-500 "
               />
               {showDescriptionSuggestions && descriptionSuggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-64 overflow-hidden mt-1">
@@ -673,19 +678,23 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           </div>
 
           {formFieldVisibility.tags && (
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Tags className="h-4 w-4" />
+            <div className="space-y-1">
+              <Label className="text-sm font-medium text-gray-700">
                 Tags
               </Label>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Input
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                   placeholder="Add a tag"
+                  className="h-12 px-4 rounded-lg border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-indigo-300 outline-none transition-all duration-200"
                 />
-                <Button type="button" onClick={addTag} size="icon">
+                <Button
+                  type="button"
+                  onClick={addTag}
+                  className="h-12 w-12 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white flex items-center justify-center"
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -712,18 +721,17 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           )}
 
           {formFieldVisibility.category && (
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="category" className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  Category (Optional)
+                <Label htmlFor="category" className="text-sm font-medium text-gray-700">
+                  Category <span className="text-gray-400 font-normal">Optional</span>
                 </Label>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowCategoryDialog(true)}
-                  className="h-7"
+                  className="h-8 px-3 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg"
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   Add
@@ -733,8 +741,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 value={watch('category') || 'none'}
                 onValueChange={(value: string) => setValue('category', value === 'none' ? '' : value)}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category (optional)" />
+                <SelectTrigger className="h-12 rounded-lg border-gray-200 bg-white text-gray-900 focus:border-indigo-500 ">
+                  <SelectValue placeholder="None" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px] overflow-y-auto">
                   <div className="sticky top-0 px-2 py-2 bg-popover z-10 border-b">
@@ -782,12 +790,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           )}
 
           {(formFieldVisibility.customer_vendor || formFieldVisibility.payment_method) && (
-            <div className={`grid gap-4 ${formFieldVisibility.customer_vendor && formFieldVisibility.payment_method ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`grid gap-6 ${formFieldVisibility.customer_vendor && formFieldVisibility.payment_method ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {formFieldVisibility.customer_vendor && (
-                <div className="space-y-2 relative">
-                  <Label htmlFor="customer_vendor" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    {transactionType === 'expense' || transactionType === 'purchase' ? 'Vendor' : 'Customer'}
+                <div className="space-y-1 relative">
+                  <Label htmlFor="customer_vendor" className="text-sm font-medium text-gray-700">
+                    {transactionType === 'expense' || transactionType === 'purchase' ? 'Customer' : 'Customer'}
                   </Label>
                   <div className="relative">
                     <Input
@@ -799,8 +806,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                         // Delay hiding to allow clicking on suggestions
                         setTimeout(() => setShowCustomerVendorSuggestions(false), 150);
                       }}
-                      placeholder={`Enter ${transactionType === 'expense' || transactionType === 'purchase' ? 'vendor' : 'customer'} name`}
+                      placeholder="Enter customer name"
                       autoComplete="off"
+                      className="h-12 px-4 rounded-lg border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-indigo-500 "
                     />
                     {showCustomerVendorSuggestions && customerVendorSuggestions.length > 0 && (
                       <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-64 overflow-hidden mt-1">
@@ -852,17 +860,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               )}
 
               {formFieldVisibility.payment_method && (
-                <div className="space-y-2">
-                  <Label htmlFor="payment_method" className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
+                <div className="space-y-1">
+                  <Label htmlFor="payment_method" className="text-sm font-medium text-gray-700">
                     Payment Method
                   </Label>
                   <Select
                     value={watch('payment_method') || 'none'}
                     onValueChange={(value: string) => setValue('payment_method', value === 'none' ? '' : value)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment method" />
+                    <SelectTrigger className="h-12 rounded-lg border-gray-200 bg-white text-gray-900 focus:border-indigo-500 ">
+                      <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px] overflow-y-auto">
                       <div className="sticky top-0 px-2 py-2 bg-popover z-10 border-b">
@@ -911,41 +918,47 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           )}
 
           {(formFieldVisibility.payment_status || formFieldVisibility.reference_number) && (
-            <div className={`grid gap-4 ${formFieldVisibility.payment_status && formFieldVisibility.reference_number ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`grid gap-6 ${formFieldVisibility.payment_status && formFieldVisibility.reference_number ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {formFieldVisibility.payment_status && (
-                <div className="space-y-2">
-                  <Label htmlFor="payment_status" className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
+                <div className="space-y-1">
+                  <Label htmlFor="payment_status" className="text-sm font-medium text-gray-700">
                     Payment Status
                   </Label>
-                  <Select
-                    value={watch('payment_status')}
-                    onValueChange={(value: string) => setValue('payment_status', value as 'pending' | 'completed' | 'partial' | 'cancelled')}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentStatuses.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'pending', label: 'Pending', activeColor: 'border-yellow-500 bg-yellow-500 text-white', inactiveColor: 'border-gray-200 text-gray-700 hover:border-yellow-300 hover:bg-yellow-50 bg-white' },
+                      { value: 'completed', label: 'Completed', activeColor: 'border-green-500 bg-green-500 text-white', inactiveColor: 'border-gray-200 text-gray-700 hover:border-green-300 hover:bg-green-50 bg-white' },
+                      { value: 'failed', label: 'Failed', activeColor: 'border-red-500 bg-red-500 text-white', inactiveColor: 'border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50 bg-white' }
+                    ].map((status) => {
+                      const isSelected = watch('payment_status') === status.value;
+                      return (
+                        <button
+                          key={status.value}
+                          type="button"
+                          onClick={() => setValue('payment_status', status.value as 'pending' | 'completed' | 'partial' | 'cancelled')}
+                          className={cn(
+                            'h-12 rounded-lg border-2 text-sm font-medium transition-all duration-200',
+                            isSelected ? status.activeColor : status.inactiveColor
+                          )}
+                        >
                           {status.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
               {formFieldVisibility.reference_number && (
-                <div className="space-y-2">
-                  <Label htmlFor="reference_number" className="flex items-center gap-2">
-                    <Hash className="h-4 w-4" />
+                <div className="space-y-1">
+                  <Label htmlFor="reference_number" className="text-sm font-medium text-gray-700">
                     Reference Number
                   </Label>
                   <Input
                     id="reference_number"
                     {...register('reference_number')}
-                    placeholder="Enter reference number"
+                    placeholder="Enter reference #"
+                    className="h-12 px-4 rounded-lg border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-indigo-500 "
                   />
                 </div>
               )}
@@ -963,9 +976,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   <Input
                     id="tax_amount"
                     type="number"
-                    step="0.01"
+                    step="1"
+                    min="0"
                     {...register('tax_amount', { valueAsNumber: true })}
-                    placeholder="0.00"
+                    placeholder="0"
+                    onWheel={(e) => e.currentTarget.blur()}
+                    onKeyDown={(e) => {
+                      if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                        e.preventDefault();
+                      }
+                    }}
                   />
                 </div>
               )}
@@ -979,9 +999,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   <Input
                     id="discount_amount"
                     type="number"
-                    step="0.01"
+                    step="1"
+                    min="0"
                     {...register('discount_amount', { valueAsNumber: true })}
-                    placeholder="0.00"
+                    placeholder="0"
+                    onWheel={(e) => e.currentTarget.blur()}
+                    onKeyDown={(e) => {
+                      if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                        e.preventDefault();
+                      }
+                    }}
                   />
                 </div>
               )}
@@ -1069,9 +1096,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           )}
 
           {formFieldVisibility.notes && (
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="flex items-center gap-2">
-                <StickyNote className="h-4 w-4" />
+            <div className="space-y-1">
+              <Label htmlFor="notes" className="text-sm font-medium text-gray-700">
                 Notes
               </Label>
               <Textarea
@@ -1079,29 +1105,26 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 {...register('notes')}
                 placeholder="Add any additional notes"
                 rows={3}
+                className="px-4 py-3 rounded-lg border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-indigo-500  resize-none"
               />
             </div>
           )}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+          <DialogFooter className="pt-6 flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 h-12 rounded-lg border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="flex items-center gap-2">
-              {(() => {
-                if (loading) return 'Saving...';
-
-                const selectedOption = typeOptions.find(opt => opt.value === transactionType);
-                const Icon = selectedOption?.icon;
-                const actionText = mode === 'create' ? 'Add' : 'Update';
-
-                return (
-                  <>
-                    {Icon && <Icon className="h-4 w-4" />}
-                    {actionText} {selectedOption?.label || 'Transaction'}
-                  </>
-                );
-              })()}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex-1 h-12 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium flex items-center justify-center gap-2"
+            >
+              {loading ? 'Saving...' : `Create ${transactionType.charAt(0).toUpperCase() + transactionType.slice(1)}`}
             </Button>
           </DialogFooter>
         </form>

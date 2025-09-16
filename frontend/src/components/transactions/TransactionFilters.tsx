@@ -271,6 +271,59 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
     <div className="space-y-4">
       {/* Main Filter Bar */}
       <div className="flex flex-nowrap overflow-x-auto items-center gap-4">
+        {/* Date Range Filter - Moved to beginning with bigger size */}
+        {filterVisibility.date_range && (
+          <div className="flex gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-[140px] justify-start text-left font-normal',
+                    !fromDate && 'text-muted-foreground'
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{fromDate ? format(fromDate, 'MMM dd yyyy') : 'From'}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={fromDate}
+                  onSelect={handleFromDateChange}
+                  initialFocus
+                  className="rounded-md border"
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-[140px] justify-start text-left font-normal',
+                    !toDate && 'text-muted-foreground'
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{toDate ? format(toDate, 'MMM dd yyyy') : 'To'}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={toDate}
+                  onSelect={handleToDateChange}
+                  initialFocus
+                  className="rounded-md border"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
+
         {/* Search Input - Compact size in filter bar */}
         {filterVisibility.search && (
           <div className="w-64">
@@ -436,7 +489,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
             )}
           >
             <Filter className="h-4 w-4" />
-            <span className="hidden sm:inline">Advanced Filters</span>
+            <span className="hidden sm:inline">Filters</span>
           </Button>
 
           <div className="flex items-center border rounded-md">
@@ -495,10 +548,9 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
             </Button>
           </div>
 
-          {/* Main Filters Section */}
+          {/* Unified Filters Section */}
           <div className="space-y-4">
-            <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Basic Filters</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {filterVisibility.category && (
                 <div className="space-y-2">
                   <Label>Category</Label>
@@ -883,67 +935,6 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                       </div>
                     </PopoverContent>
                   </Popover>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Advanced Filters Section */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Advanced Filters</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
-              {filterVisibility.date_range && (
-                <div className="space-y-2">
-                  <Label>Date Range</Label>
-                  <div className="flex gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'flex-1 justify-start text-left font-normal',
-                            !fromDate && 'text-muted-foreground'
-                          )}
-                        >
-                          <Calendar className="mr-2 h-4 w-4" />
-                          {fromDate ? format(fromDate, 'PP') : 'From'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={fromDate}
-                          onSelect={handleFromDateChange}
-                          initialFocus
-                          className="rounded-md border"
-                        />
-                      </PopoverContent>
-                    </Popover>
-
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'flex-1 justify-start text-left font-normal',
-                            !toDate && 'text-muted-foreground'
-                          )}
-                        >
-                          <Calendar className="mr-2 h-4 w-4" />
-                          {toDate ? format(toDate, 'PP') : 'To'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={toDate}
-                          onSelect={handleToDateChange}
-                          initialFocus
-                          className="rounded-md border"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
                 </div>
               )}
 
