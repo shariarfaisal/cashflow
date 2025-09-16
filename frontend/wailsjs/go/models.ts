@@ -320,9 +320,10 @@ export namespace services {
 	    created_by: string;
 	    from_date: string;
 	    to_date: string;
-	    type: string;
-	    category: string;
-	    payment_status: string;
+	    type: string[];
+	    category: string[];
+	    payment_status: string[];
+	    payment_method: string[];
 	    customer_vendor: string;
 	    search: string;
 	    limit: number;
@@ -340,6 +341,7 @@ export namespace services {
 	        this.type = source["type"];
 	        this.category = source["category"];
 	        this.payment_status = source["payment_status"];
+	        this.payment_method = source["payment_method"];
 	        this.customer_vendor = source["customer_vendor"];
 	        this.search = source["search"];
 	        this.limit = source["limit"];
@@ -360,6 +362,20 @@ export namespace services {
 	        this.created_by = source["created_by"];
 	        this.from_date = source["from_date"];
 	        this.to_date = source["to_date"];
+	    }
+	}
+	export class SuggestionItem {
+	    value: string;
+	    frequency: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SuggestionItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.value = source["value"];
+	        this.frequency = source["frequency"];
 	    }
 	}
 	export class UpdateCategoryParams {

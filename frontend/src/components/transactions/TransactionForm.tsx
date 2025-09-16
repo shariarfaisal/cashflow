@@ -172,7 +172,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   const loadDescriptionSuggestions = async (search: string) => {
     try {
-      let suggestions = [];
+      let suggestions: Array<{ value: string; frequency: number }> = [];
 
       if (search.length < 2) {
         // Show last 5 transaction descriptions when no search
@@ -210,7 +210,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   const loadCustomerVendorSuggestions = async (search: string) => {
     try {
-      let suggestions = [];
+      let suggestions: Array<{ value: string; frequency: number }> = [];
 
       if (search.length < 2) {
         // Show last 5 customer/vendor entries when no search
@@ -1087,8 +1087,21 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : mode === 'create' ? 'Add Transaction' : 'Update Transaction'}
+            <Button type="submit" disabled={loading} className="flex items-center gap-2">
+              {(() => {
+                if (loading) return 'Saving...';
+
+                const selectedOption = typeOptions.find(opt => opt.value === transactionType);
+                const Icon = selectedOption?.icon;
+                const actionText = mode === 'create' ? 'Add' : 'Update';
+
+                return (
+                  <>
+                    {Icon && <Icon className="h-4 w-4" />}
+                    {actionText} {selectedOption?.label || 'Transaction'}
+                  </>
+                );
+              })()}
             </Button>
           </DialogFooter>
         </form>

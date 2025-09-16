@@ -17,11 +17,12 @@ WHERE deleted_at IS NULL
     AND created_by = ?1
     AND (?2 = '' OR transaction_date >= ?2)
     AND (?3 = '' OR transaction_date <= ?3)
-    AND (?4 = '' OR type = ?4)
-    AND (?5 = '' OR category_id = ?5)
-    AND (?6 = '' OR payment_status = ?6)
-    AND (?7 = '' OR customer_vendor LIKE '%' || ?7 || '%')
-    AND (?8 = '' OR description LIKE '%' || ?8 || '%')
+    AND (?4 = '' OR type = ?4 OR ?4 LIKE '%' || type || '%')
+    AND (?5 = '' OR category_id = ?5 OR ?5 LIKE '%' || category_id || '%')
+    AND (?6 = '' OR payment_status = ?6 OR ?6 LIKE '%' || payment_status || '%')
+    AND (?7 = '' OR payment_method_id = ?7 OR ?7 LIKE '%' || payment_method_id || '%')
+    AND (?8 = '' OR customer_vendor LIKE '%' || ?8 || '%')
+    AND (?9 = '' OR description LIKE '%' || ?9 || '%')
 `
 
 type CountTransactionsParams struct {
@@ -31,6 +32,7 @@ type CountTransactionsParams struct {
 	TypeFilter           interface{} `json:"type_filter"`
 	CategoryFilter       interface{} `json:"category_filter"`
 	PaymentStatusFilter  interface{} `json:"payment_status_filter"`
+	PaymentMethodFilter  interface{} `json:"payment_method_filter"`
 	CustomerVendorSearch interface{} `json:"customer_vendor_search"`
 	DescriptionSearch    interface{} `json:"description_search"`
 }
@@ -43,6 +45,7 @@ func (q *Queries) CountTransactions(ctx context.Context, arg CountTransactionsPa
 		arg.TypeFilter,
 		arg.CategoryFilter,
 		arg.PaymentStatusFilter,
+		arg.PaymentMethodFilter,
 		arg.CustomerVendorSearch,
 		arg.DescriptionSearch,
 	)
@@ -699,13 +702,14 @@ WHERE deleted_at IS NULL
     AND created_by = ?1
     AND (?2 = '' OR transaction_date >= ?2)
     AND (?3 = '' OR transaction_date <= ?3)
-    AND (?4 = '' OR type = ?4)
-    AND (?5 = '' OR category_id = ?5)
-    AND (?6 = '' OR payment_status = ?6)
-    AND (?7 = '' OR customer_vendor LIKE '%' || ?7 || '%')
-    AND (?8 = '' OR description LIKE '%' || ?8 || '%')
+    AND (?4 = '' OR type = ?4 OR ?4 LIKE '%' || type || '%')
+    AND (?5 = '' OR category_id = ?5 OR ?5 LIKE '%' || category_id || '%')
+    AND (?6 = '' OR payment_status = ?6 OR ?6 LIKE '%' || payment_status || '%')
+    AND (?7 = '' OR payment_method_id = ?7 OR ?7 LIKE '%' || payment_method_id || '%')
+    AND (?8 = '' OR customer_vendor LIKE '%' || ?8 || '%')
+    AND (?9 = '' OR description LIKE '%' || ?9 || '%')
 ORDER BY transaction_date DESC, created_at DESC
-LIMIT ?10 OFFSET ?9
+LIMIT ?11 OFFSET ?10
 `
 
 type ListTransactionsParams struct {
@@ -715,6 +719,7 @@ type ListTransactionsParams struct {
 	TypeFilter           interface{} `json:"type_filter"`
 	CategoryFilter       interface{} `json:"category_filter"`
 	PaymentStatusFilter  interface{} `json:"payment_status_filter"`
+	PaymentMethodFilter  interface{} `json:"payment_method_filter"`
 	CustomerVendorSearch interface{} `json:"customer_vendor_search"`
 	DescriptionSearch    interface{} `json:"description_search"`
 	Offset               int64       `json:"offset"`
@@ -729,6 +734,7 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 		arg.TypeFilter,
 		arg.CategoryFilter,
 		arg.PaymentStatusFilter,
+		arg.PaymentMethodFilter,
 		arg.CustomerVendorSearch,
 		arg.DescriptionSearch,
 		arg.Offset,

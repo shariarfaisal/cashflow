@@ -26,8 +26,13 @@ func main() {
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup:        app.startup,
 		OnShutdown:       app.shutdown,
+		DisableResize:    false,
 		Fullscreen:       false,
 		WindowStartState: options.Normal,
+		MaxWidth:         0,
+		MaxHeight:        0,
+		MinWidth:         800,
+		MinHeight:        600,
 		EnableDefaultContextMenu: false,
 		Bind: []interface{}{
 			app,

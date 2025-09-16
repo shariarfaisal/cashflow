@@ -25,9 +25,10 @@ WHERE deleted_at IS NULL
     AND created_by = sqlc.arg('created_by')
     AND (sqlc.arg('from_date') = '' OR transaction_date >= sqlc.arg('from_date'))
     AND (sqlc.arg('to_date') = '' OR transaction_date <= sqlc.arg('to_date'))
-    AND (sqlc.arg('type_filter') = '' OR type = sqlc.arg('type_filter'))
-    AND (sqlc.arg('category_filter') = '' OR category_id = sqlc.arg('category_filter'))
-    AND (sqlc.arg('payment_status_filter') = '' OR payment_status = sqlc.arg('payment_status_filter'))
+    AND (sqlc.arg('type_filter') = '' OR type = sqlc.arg('type_filter') OR sqlc.arg('type_filter') LIKE '%' || type || '%')
+    AND (sqlc.arg('category_filter') = '' OR category_id = sqlc.arg('category_filter') OR sqlc.arg('category_filter') LIKE '%' || category_id || '%')
+    AND (sqlc.arg('payment_status_filter') = '' OR payment_status = sqlc.arg('payment_status_filter') OR sqlc.arg('payment_status_filter') LIKE '%' || payment_status || '%')
+    AND (sqlc.arg('payment_method_filter') = '' OR payment_method_id = sqlc.arg('payment_method_filter') OR sqlc.arg('payment_method_filter') LIKE '%' || payment_method_id || '%')
     AND (sqlc.arg('customer_vendor_search') = '' OR customer_vendor LIKE '%' || sqlc.arg('customer_vendor_search') || '%')
     AND (sqlc.arg('description_search') = '' OR description LIKE '%' || sqlc.arg('description_search') || '%')
 ORDER BY transaction_date DESC, created_at DESC
@@ -170,9 +171,10 @@ WHERE deleted_at IS NULL
     AND created_by = sqlc.arg('created_by')
     AND (sqlc.arg('from_date') = '' OR transaction_date >= sqlc.arg('from_date'))
     AND (sqlc.arg('to_date') = '' OR transaction_date <= sqlc.arg('to_date'))
-    AND (sqlc.arg('type_filter') = '' OR type = sqlc.arg('type_filter'))
-    AND (sqlc.arg('category_filter') = '' OR category_id = sqlc.arg('category_filter'))
-    AND (sqlc.arg('payment_status_filter') = '' OR payment_status = sqlc.arg('payment_status_filter'))
+    AND (sqlc.arg('type_filter') = '' OR type = sqlc.arg('type_filter') OR sqlc.arg('type_filter') LIKE '%' || type || '%')
+    AND (sqlc.arg('category_filter') = '' OR category_id = sqlc.arg('category_filter') OR sqlc.arg('category_filter') LIKE '%' || category_id || '%')
+    AND (sqlc.arg('payment_status_filter') = '' OR payment_status = sqlc.arg('payment_status_filter') OR sqlc.arg('payment_status_filter') LIKE '%' || payment_status || '%')
+    AND (sqlc.arg('payment_method_filter') = '' OR payment_method_id = sqlc.arg('payment_method_filter') OR sqlc.arg('payment_method_filter') LIKE '%' || payment_method_id || '%')
     AND (sqlc.arg('customer_vendor_search') = '' OR customer_vendor LIKE '%' || sqlc.arg('customer_vendor_search') || '%')
     AND (sqlc.arg('description_search') = '' OR description LIKE '%' || sqlc.arg('description_search') || '%');
 

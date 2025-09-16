@@ -247,7 +247,7 @@ export const useTransactionStore = create<TransactionState>()(
         })),
         resetFormFieldVisibility: () => set({ formFieldVisibility: defaultFormFieldVisibility }),
         setFormFieldOrder: (order) => set((state) => ({
-          formFieldOrder: { ...state.formFieldOrder, ...order }
+          formFieldOrder: { ...state.formFieldOrder, ...order } as FormFieldOrder
         })),
         resetFormFieldOrder: () => set({ formFieldOrder: defaultFormFieldOrder }),
         setFilterVisibility: (visibility) => set((state) => ({
@@ -346,22 +346,22 @@ export const useTransactionStore = create<TransactionState>()(
 
           // Apply type filter
           if (Array.isArray(state.filters.type) && state.filters.type.length > 0) {
-            filtered = filtered.filter(t => state.filters.type.includes(t.type));
+            filtered = filtered.filter(t => state.filters.type!.includes(t.type));
           }
 
           // Apply category filter
           if (Array.isArray(state.filters.category) && state.filters.category.length > 0) {
-            filtered = filtered.filter(t => state.filters.category.includes(t.category));
+            filtered = filtered.filter(t => state.filters.category!.includes(t.category));
           }
 
           // Apply payment status filter
           if (Array.isArray(state.filters.payment_status) && state.filters.payment_status.length > 0) {
-            filtered = filtered.filter(t => state.filters.payment_status.includes(t.payment_status));
+            filtered = filtered.filter(t => state.filters.payment_status!.includes(t.payment_status));
           }
 
           // Apply payment method filter
           if (Array.isArray(state.filters.payment_method) && state.filters.payment_method.length > 0) {
-            filtered = filtered.filter(t => state.filters.payment_method.includes(t.payment_method));
+            filtered = filtered.filter(t => state.filters.payment_method!.includes(t.payment_method));
           }
 
           return filtered;

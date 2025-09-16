@@ -30,6 +30,10 @@ export function DeleteUser(arg1:string):Promise<void>;
 
 export function GetCategory(arg1:string):Promise<main.CategoryResponse>;
 
+export function GetCustomerVendorSuggestions(arg1:string,arg2:string):Promise<Array<services.SuggestionItem>>;
+
+export function GetDescriptionSuggestions(arg1:string,arg2:string):Promise<Array<services.SuggestionItem>>;
+
 export function GetPaymentMethod(arg1:string):Promise<main.PaymentMethodResponse>;
 
 export function GetRecentTransactions(arg1:number):Promise<Array<main.TransactionResponse>>;

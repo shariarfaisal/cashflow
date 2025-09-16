@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"cashflow/internal/database"
@@ -82,6 +83,14 @@ func (s *TransactionService) GetTransaction(ctx context.Context, id string) (*db
 	return &transaction, nil
 }
 
+// Helper function to convert string array to comma-separated string for SQL filtering
+func arrayToCommaSeparated(arr []string) string {
+	if len(arr) == 0 {
+		return ""
+	}
+	return strings.Join(arr, ",")
+}
+
 // ListTransactions lists transactions with filters
 func (s *TransactionService) ListTransactions(ctx context.Context, params ListTransactionParams) ([]db.Transaction, error) {
 	// Set defaults
@@ -96,9 +105,10 @@ func (s *TransactionService) ListTransactions(ctx context.Context, params ListTr
 		CreatedBy:             params.CreatedBy,
 		FromDate:              params.FromDate,
 		ToDate:                params.ToDate,
-		TypeFilter:            params.TypeFilter,
-		CategoryFilter:        params.CategoryFilter,
-		PaymentStatusFilter:   params.PaymentStatusFilter,
+		TypeFilter:            arrayToCommaSeparated(params.TypeFilter),
+		CategoryFilter:        arrayToCommaSeparated(params.CategoryFilter),
+		PaymentStatusFilter:   arrayToCommaSeparated(params.PaymentStatusFilter),
+		PaymentMethodFilter:   arrayToCommaSeparated(params.PaymentMethodFilter),
 		CustomerVendorSearch:  params.CustomerVendorSearch,
 		DescriptionSearch:     params.DescriptionSearch,
 		Limit:                 int64(params.Limit),
@@ -212,9 +222,7 @@ func (s *TransactionService) GetDescriptionSuggestions(ctx context.Context, crea
 	results, err := s.db.Queries().GetDescriptionSuggestions(ctx, db.GetDescriptionSuggestionsParams{
 		CreatedBy:  createdBy,
 		Column2:    transactionType,
-		Column3:    transactionType,
-		Column4:    search,
-		Column5:    search,
+		Column4:    toSqlNullString(search),
 		Limit:      int64(limit),
 	})
 	if err != nil {
@@ -240,9 +248,7 @@ func (s *TransactionService) GetCustomerVendorSuggestions(ctx context.Context, c
 	results, err := s.db.Queries().GetCustomerVendorSuggestions(ctx, db.GetCustomerVendorSuggestionsParams{
 		CreatedBy:  createdBy,
 		Column2:    transactionType,
-		Column3:    transactionType,
-		Column4:    search,
-		Column5:    search,
+		Column4:    toSqlNullString(search),
 		Limit:      int64(limit),
 	})
 	if err != nil {
@@ -252,7 +258,7 @@ func (s *TransactionService) GetCustomerVendorSuggestions(ctx context.Context, c
 	suggestions := make([]SuggestionItem, len(results))
 	for i, result := range results {
 		suggestions[i] = SuggestionItem{
-			Value:     result.CustomerVendor,
+			Value:     result.CustomerVendor.String,
 			Frequency: result.Frequency,
 		}
 	}
@@ -309,16 +315,17 @@ type UpdateTransactionParams struct {
 }
 
 type ListTransactionParams struct {
-	CreatedBy             string `json:"created_by"`
-	FromDate              string `json:"from_date"`
-	ToDate                string `json:"to_date"`
-	TypeFilter            string `json:"type"`
-	CategoryFilter        string `json:"category"`
-	PaymentStatusFilter   string `json:"payment_status"`
-	CustomerVendorSearch  string `json:"customer_vendor"`
-	DescriptionSearch     string `json:"search"`
-	Limit                 int    `json:"limit"`
-	Offset                int    `json:"offset"`
+	CreatedBy             string   `json:"created_by"`
+	FromDate              string   `json:"from_date"`
+	ToDate                string   `json:"to_date"`
+	TypeFilter            []string `json:"type"`
+	CategoryFilter        []string `json:"category"`
+	PaymentStatusFilter   []string `json:"payment_status"`
+	PaymentMethodFilter   []string `json:"payment_method"`
+	CustomerVendorSearch  string   `json:"customer_vendor"`
+	DescriptionSearch     string   `json:"search"`
+	Limit                 int      `json:"limit"`
+	Offset                int      `json:"offset"`
 }
 
 type StatsParams struct {

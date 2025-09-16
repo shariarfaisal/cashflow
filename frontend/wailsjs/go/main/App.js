@@ -54,6 +54,14 @@ export function GetCategory(arg1) {
   return window['go']['main']['App']['GetCategory'](arg1);
 }
 
+export function GetCustomerVendorSuggestions(arg1, arg2) {
+  return window['go']['main']['App']['GetCustomerVendorSuggestions'](arg1, arg2);
+}
+
+export function GetDescriptionSuggestions(arg1, arg2) {
+  return window['go']['main']['App']['GetDescriptionSuggestions'](arg1, arg2);
+}
+
 export function GetPaymentMethod(arg1) {
   return window['go']['main']['App']['GetPaymentMethod'](arg1);
 }
