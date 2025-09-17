@@ -121,7 +121,15 @@ export const Transactions: React.FC = () => {
           type: t.type as 'income' | 'expense' | 'sale' | 'purchase',
         }));
         setTransactions(convertedTransactions);
-        setTotalCount(convertedTransactions.length);
+        // For now, set total count based on returned results
+        // If we get exactly the page size, assume there might be more pages
+        if (convertedTransactions.length === pageSize) {
+          // Approximate total count - set to a number that enables next page
+          setTotalCount((currentPage * pageSize) + 1);
+        } else {
+          // Last page - set exact total
+          setTotalCount((currentPage - 1) * pageSize + convertedTransactions.length);
+        }
       }
     } catch (error) {
       console.error('Error loading transactions:', error);

@@ -93,6 +93,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
   const [showPaymentStatusFilter, setShowPaymentStatusFilter] = useState(false);
   const [showPaymentMethodFilter, setShowPaymentMethodFilter] = useState(false);
   const [showTypeFilter, setShowTypeFilter] = useState(false);
+  const [showFilterVisibilitySettings, setShowFilterVisibilitySettings] = useState(false);
 
   const handleSearch = (value: string) => {
     setFilters({ search: value });
@@ -184,6 +185,28 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
         return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
       })
       .slice(0, 10); // Limit to 10 suggestions
+  };
+
+  // Check if any filters are currently applied
+  const hasActiveFilters = () => {
+    return !!(
+      filters.search ||
+      filters.from_date ||
+      filters.to_date ||
+      (Array.isArray(filters.category) && filters.category.length > 0) ||
+      (Array.isArray(filters.type) && filters.type.length > 0) ||
+      (Array.isArray(filters.payment_status) && filters.payment_status.length > 0) ||
+      (Array.isArray(filters.payment_method) && filters.payment_method.length > 0) ||
+      filters.customer_vendor ||
+      (Array.isArray(filters.tags) && filters.tags.length > 0) ||
+      filters.min_amount ||
+      filters.max_amount ||
+      filters.reference_number ||
+      filters.invoice_number ||
+      filters.has_tax ||
+      filters.has_discount ||
+      filters.is_recurring
+    );
   };
 
   const categories = useTransactionStore((state) => state.categories);
@@ -422,71 +445,6 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
         <div className="flex-1"></div>
 
         <div className="flex items-center gap-2">
-          <Popover open={showFilterSettings} onOpenChange={setShowFilterSettings}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className={cn(showFilterSettings && 'bg-accent')}
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold">Filter Visibility Settings</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => resetFilterVisibility()}
-                    className="text-xs"
-                  >
-                    Reset All
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Choose which filters to show in the filter bar
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { key: 'search', label: 'Search' },
-                    { key: 'type', label: 'Type Select' },
-                    { key: 'category', label: 'Category' },
-                    { key: 'payment_status', label: 'Payment Status' },
-                    { key: 'payment_method', label: 'Payment Method' },
-                    { key: 'customer_vendor', label: 'Customer/Vendor' },
-                    { key: 'tags', label: 'Tags' },
-                    { key: 'date_range', label: 'Date Range' },
-                    { key: 'amount_range', label: 'Amount Range' },
-                    { key: 'reference_number', label: 'Reference #' },
-                    { key: 'invoice_number', label: 'Invoice #' },
-                    { key: 'tax_filter', label: 'Tax Filter' },
-                    { key: 'discount_filter', label: 'Discount Filter' },
-                    { key: 'recurring_filter', label: 'Recurring Filter' },
-                  ].map((field) => (
-                    <div key={field.key} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={field.key}
-                        checked={filterVisibility[field.key as keyof typeof filterVisibility]}
-                        onChange={(e) =>
-                          setFilterVisibility({
-                            ...filterVisibility,
-                            [field.key]: e.target.checked
-                          })
-                        }
-                        className="rounded border-gray-300"
-                      />
-                      <label htmlFor={field.key} className="text-sm">
-                        {field.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
 
           <Button
             variant="outline"
@@ -499,6 +457,17 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
             <Filter className="h-4 w-4" />
             <span className="hidden sm:inline">Filters</span>
           </Button>
+
+          {hasActiveFilters() && (
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <X className="h-4 w-4" />
+              <span className="hidden sm:inline">Clear</span>
+            </Button>
+          )}
 
           <div className="flex items-center border rounded-md">
             <Button
@@ -1066,6 +1035,8 @@ export const AdvancedFilterPanel: React.FC<{
     categories,
     paymentMethods,
     filterVisibility,
+    setFilterVisibility,
+    resetFilterVisibility,
     tagSuggestions,
     addTagSuggestion,
     removeTagSuggestion,
@@ -1090,6 +1061,7 @@ export const AdvancedFilterPanel: React.FC<{
   const [showPaymentMethodFilter, setShowPaymentMethodFilter] = useState(false);
   const [showTagFilter, setShowTagFilter] = useState(false);
   const [showTypeFilter, setShowTypeFilter] = useState(false);
+  const [showFilterVisibilitySettings, setShowFilterVisibilitySettings] = useState(false);
 
   const handleTypeToggle = (value: string) => {
     if (value === 'all') {
@@ -1182,15 +1154,80 @@ export const AdvancedFilterPanel: React.FC<{
       <div className="h-full flex flex-col bg-gray-50/30 border-r">
         <div className="flex items-center justify-between p-4 border-b bg-white/50">
           <h3 className="font-semibold">Advanced Filters</h3>
-          {onClose && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <Popover open={showFilterVisibilitySettings} onOpenChange={setShowFilterVisibilitySettings}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Filter Visibility Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Filter Visibility</h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetFilterVisibility}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Choose which filters to show in the advanced panel
+                  </p>
+                  <div className="space-y-1 max-h-[300px] overflow-y-auto">
+                    {[
+                      { key: 'search', label: 'Search' },
+                      { key: 'date_range', label: 'Date Range' },
+                      { key: 'category', label: 'Category' },
+                      { key: 'type', label: 'Transaction Type' },
+                      { key: 'payment_status', label: 'Payment Status' },
+                      { key: 'payment_method', label: 'Payment Method' },
+                      { key: 'customer_vendor', label: 'Customer/Vendor' },
+                      { key: 'tags', label: 'Tags' },
+                      { key: 'amount_range', label: 'Amount Range' },
+                      { key: 'reference_number', label: 'Reference Number' },
+                      { key: 'invoice_number', label: 'Invoice Number' },
+                      { key: 'tax_filter', label: 'Tax Filter' },
+                      { key: 'discount_filter', label: 'Discount Filter' },
+                      { key: 'recurring_filter', label: 'Recurring Filter' },
+                    ].map((filter) => (
+                      <div key={filter.key} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`filter-${filter.key}`}
+                          checked={filterVisibility[filter.key as keyof typeof filterVisibility]}
+                          onChange={(e) =>
+                            setFilterVisibility({
+                              [filter.key]: e.target.checked
+                            })
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor={`filter-${filter.key}`} className="text-sm">
+                          {filter.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -1700,13 +1737,78 @@ export const AdvancedFilterPanel: React.FC<{
     <div className="bg-gray-50/30">
       <div className="flex items-center justify-between p-4 border-b bg-white/50">
         <h3 className="font-semibold">Advanced Filters</h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Popover open={showFilterVisibilitySettings} onOpenChange={setShowFilterVisibilitySettings}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Filter Visibility Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Filter Visibility</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetFilterVisibility}
+                  >
+                    Reset
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Choose which filters to show in the advanced panel
+                </p>
+                <div className="space-y-1 max-h-[300px] overflow-y-auto">
+                  {[
+                    { key: 'search', label: 'Search' },
+                    { key: 'date_range', label: 'Date Range' },
+                    { key: 'category', label: 'Category' },
+                    { key: 'type', label: 'Transaction Type' },
+                    { key: 'payment_status', label: 'Payment Status' },
+                    { key: 'payment_method', label: 'Payment Method' },
+                    { key: 'customer_vendor', label: 'Customer/Vendor' },
+                    { key: 'tags', label: 'Tags' },
+                    { key: 'amount_range', label: 'Amount Range' },
+                    { key: 'reference_number', label: 'Reference Number' },
+                    { key: 'invoice_number', label: 'Invoice Number' },
+                    { key: 'tax_filter', label: 'Tax Filter' },
+                    { key: 'discount_filter', label: 'Discount Filter' },
+                    { key: 'recurring_filter', label: 'Recurring Filter' },
+                  ].map((filter) => (
+                    <div key={filter.key} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`filter-grid-${filter.key}`}
+                        checked={filterVisibility[filter.key as keyof typeof filterVisibility]}
+                        onChange={(e) =>
+                          setFilterVisibility({
+                            [filter.key]: e.target.checked
+                          })
+                        }
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor={`filter-grid-${filter.key}`} className="text-sm">
+                        {filter.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="p-4">

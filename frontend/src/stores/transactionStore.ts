@@ -34,7 +34,6 @@ interface FormFieldConfig {
 }
 
 type FormFieldOrder = Record<string, number>;
-import { startOfMonth, endOfMonth, format } from 'date-fns';
 
 interface TransactionState {
   // Data
@@ -119,8 +118,8 @@ interface TransactionState {
 }
 
 const defaultFilters: ListTransactionParams = {
-  from_date: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
-  to_date: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
+  from_date: '',
+  to_date: '',
   type: [],
   category: [],
   payment_status: [],
@@ -194,7 +193,7 @@ const defaultFilterVisibility: FilterVisibility = {
   tax_filter: false,
   discount_filter: false,
   recurring_filter: false,
-  date_range: true,
+  date_range: false,
 };
 
 export const useTransactionStore = create<TransactionState>()(
