@@ -40,7 +40,7 @@ const StatCard: React.FC<StatCardProps> = ({
   iconColor,
 }) => {
   return (
-    <Card className={cn('relative overflow-hidden', className)}>
+    <Card className={cn('relative overflow-hidden min-w-[200px]', className)}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
@@ -81,15 +81,17 @@ export const TransactionStats: React.FC<TransactionStatsProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-6">
-              <div className="h-4 bg-muted rounded w-24 mb-2"></div>
-              <div className="h-8 bg-muted rounded w-32"></div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(200px,1fr))] min-w-[1200px]">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse min-w-[200px]">
+              <CardContent className="p-6">
+                <div className="h-4 bg-muted rounded w-24 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-32"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -118,8 +120,9 @@ export const TransactionStats: React.FC<TransactionStatsProps> = ({
       : 'down';
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      <StatCard
+    <div className="overflow-x-auto">
+      <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(200px,1fr))] min-w-[1200px]">
+        <StatCard
         title="Total Income"
         value={formatCurrency(stats.total_income)}
         icon={TrendingUp}
@@ -171,7 +174,8 @@ export const TransactionStats: React.FC<TransactionStatsProps> = ({
         trendValue={`${stats.pending_income > 0 ? formatCurrency(stats.pending_income) + ' pending' : 'All clear'}`}
         valueColor="text-cyan-600 dark:text-cyan-400"
         iconColor="text-cyan-600 dark:text-cyan-400"
-      />
+        />
+      </div>
     </div>
   );
 };
