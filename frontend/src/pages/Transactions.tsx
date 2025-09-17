@@ -58,6 +58,7 @@ export const Transactions: React.FC = () => {
     setSelectedTransaction,
     setTotalCount,
     setCurrentPage,
+    setPageSize,
     getTotalPages,
     setPaymentMethods,
     sidebarMode,
@@ -100,6 +101,7 @@ export const Transactions: React.FC = () => {
   const loadTransactions = async () => {
     setLoading(true);
     try {
+      console.log("run")
       const result = await ListTransactions({
         created_by: '',
         from_date: filters.from_date || '',
@@ -110,9 +112,12 @@ export const Transactions: React.FC = () => {
         payment_method: Array.isArray(filters.payment_method) ? filters.payment_method : (filters.payment_method ? [filters.payment_method] : []),
         customer_vendor: filters.customer_vendor || '',
         search: filters.search || '',
+        min_due_amount: 0,
+        max_due_amount: 0,
         limit: pageSize,
         offset: (currentPage - 1) * pageSize,
       });
+      console.log(result)
 
       if (result && Array.isArray(result)) {
         // Convert the result to match our frontend types
@@ -291,7 +296,6 @@ export const Transactions: React.FC = () => {
           toast.success('Transaction updated successfully');
         }
       }
-      setShowForm(false);
       await loadTransactions();
       await loadStats();
     } catch (error) {
@@ -436,7 +440,9 @@ export const Transactions: React.FC = () => {
         viewMode={viewMode}
         currentPage={currentPage}
         totalPages={getTotalPages()}
+        pageSize={pageSize}
         onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
         onEdit={handleEditTransaction}
         onDelete={handleDeleteTransaction}
         onView={handleViewTransaction}
@@ -449,6 +455,7 @@ export const Transactions: React.FC = () => {
           onClose={() => setShowForm(false)}
           onSubmit={handleFormSubmit}
           mode={formMode}
+          closeAfterSubmit={false}
         />
       )}
 
@@ -521,6 +528,7 @@ export const Transactions: React.FC = () => {
               onSubmit={handleFormSubmit}
               mode={formMode}
               isInSidebar={true}
+              closeAfterSubmit={false}
             />
           </div>
         </ResizablePanel>

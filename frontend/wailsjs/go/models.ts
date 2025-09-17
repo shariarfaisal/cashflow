@@ -87,6 +87,7 @@ export namespace main {
 	    attachments: string[];
 	    tax_amount: number;
 	    discount_amount: number;
+	    due_amount: number;
 	    net_amount: number;
 	    currency: string;
 	    exchange_rate: number;
@@ -122,6 +123,7 @@ export namespace main {
 	        this.attachments = source["attachments"];
 	        this.tax_amount = source["tax_amount"];
 	        this.discount_amount = source["discount_amount"];
+	        this.due_amount = source["due_amount"];
 	        this.net_amount = source["net_amount"];
 	        this.currency = source["currency"];
 	        this.exchange_rate = source["exchange_rate"];
@@ -278,6 +280,7 @@ export namespace services {
 	    attachments: string[];
 	    tax_amount: number;
 	    discount_amount: number;
+	    due_amount: number;
 	    currency: string;
 	    exchange_rate: number;
 	    is_recurring: boolean;
@@ -307,6 +310,7 @@ export namespace services {
 	        this.attachments = source["attachments"];
 	        this.tax_amount = source["tax_amount"];
 	        this.discount_amount = source["discount_amount"];
+	        this.due_amount = source["due_amount"];
 	        this.currency = source["currency"];
 	        this.exchange_rate = source["exchange_rate"];
 	        this.is_recurring = source["is_recurring"];
@@ -326,6 +330,8 @@ export namespace services {
 	    payment_method: string[];
 	    customer_vendor: string;
 	    search: string;
+	    min_due_amount: number;
+	    max_due_amount: number;
 	    limit: number;
 	    offset: number;
 	
@@ -344,6 +350,8 @@ export namespace services {
 	        this.payment_method = source["payment_method"];
 	        this.customer_vendor = source["customer_vendor"];
 	        this.search = source["search"];
+	        this.min_due_amount = source["min_due_amount"];
+	        this.max_due_amount = source["max_due_amount"];
 	        this.limit = source["limit"];
 	        this.offset = source["offset"];
 	    }
@@ -416,6 +424,7 @@ export namespace services {
 	    attachments: string[];
 	    tax_amount: number;
 	    discount_amount: number;
+	    due_amount: number;
 	    currency: string;
 	    exchange_rate: number;
 	    is_recurring: boolean;
@@ -443,6 +452,7 @@ export namespace services {
 	        this.attachments = source["attachments"];
 	        this.tax_amount = source["tax_amount"];
 	        this.discount_amount = source["discount_amount"];
+	        this.due_amount = source["due_amount"];
 	        this.currency = source["currency"];
 	        this.exchange_rate = source["exchange_rate"];
 	        this.is_recurring = source["is_recurring"];

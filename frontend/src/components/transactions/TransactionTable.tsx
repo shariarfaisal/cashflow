@@ -21,6 +21,22 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { TableColumnSettings } from './TableColumnSettings';
 import { useTransactionStore } from '@/stores/transactionStore';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface TransactionTableProps {
   transactions: TransactionResponse[];
@@ -28,7 +44,9 @@ interface TransactionTableProps {
   viewMode: 'table' | 'grid' | 'calendar';
   currentPage: number;
   totalPages: number;
+  pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
   onEdit: (transaction: TransactionResponse) => void;
   onDelete: (id: string) => void;
   onView: (transaction: TransactionResponse) => void;
@@ -40,7 +58,9 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   viewMode,
   currentPage,
   totalPages,
+  pageSize,
   onPageChange,
+  onPageSizeChange,
   onEdit,
   onDelete,
   onView,
@@ -110,7 +130,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
   const isSortableColumn = (columnId: string) => {
     const sortableColumns = [
-      'date', 'amount', 'net_amount', 'tax_amount', 'discount_amount',
+      'date', 'amount', 'net_amount', 'tax_amount', 'discount_amount', 'due_amount',
       'exchange_rate', 'type', 'category', 'payment_method', 'status',
       'discount', 'net', 'tax' // Additional sorting columns
     ];
@@ -144,6 +164,10 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       case 'discount_amount':
         aValue = a.discount_amount;
         bValue = b.discount_amount;
+        break;
+      case 'due_amount':
+        aValue = a.due_amount;
+        bValue = b.due_amount;
         break;
       case 'exchange_rate':
         aValue = a.exchange_rate;
@@ -210,6 +234,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       case 'net_amount':
       case 'tax_amount':
       case 'discount_amount':
+      case 'due_amount':
         return 'min-w-[100px]';
       case 'category':
       case 'payment_method':
@@ -355,10 +380,12 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             </Card>
           ))}
         </div>
-        <Pagination
+        <EnhancedPagination
           currentPage={currentPage}
           totalPages={totalPages}
+          pageSize={pageSize}
           onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
         />
       </div>
     );
@@ -494,6 +521,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         return transaction.tax_amount > 0 ? formatCurrency(transaction.tax_amount) : '-';
       case 'discount_amount':
         return transaction.discount_amount > 0 ? formatCurrency(transaction.discount_amount) : '-';
+      case 'due_amount':
+        return transaction.due_amount > 0 ? formatCurrency(transaction.due_amount) : '-';
       case 'currency':
         return transaction.currency || 'USD';
       case 'recurring':
@@ -605,51 +634,135 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
           </table>
         </div>
       </Card>
-      <Pagination
+      <EnhancedPagination
         currentPage={currentPage}
         totalPages={totalPages}
+        pageSize={pageSize}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     </div>
   );
 };
 
-interface PaginationProps {
+interface EnhancedPaginationProps {
   currentPage: number;
   totalPages: number;
+  pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
 }
 
-const Pagination: React.FC<PaginationProps> = ({
+const EnhancedPagination: React.FC<EnhancedPaginationProps> = ({
   currentPage,
   totalPages,
+  pageSize,
   onPageChange,
+  onPageSizeChange,
 }) => {
   if (totalPages <= 1) return null;
 
+  const generatePageNumbers = () => {
+    const pages = [];
+    const showEllipsis = totalPages > 7;
+
+    if (!showEllipsis) {
+      // Show all pages if 7 or fewer
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      if (currentPage <= 4) {
+        // Show pages 2-5 and ellipsis
+        for (let i = 2; i <= Math.min(5, totalPages - 1); i++) {
+          pages.push(i);
+        }
+        if (totalPages > 6) pages.push('ellipsis');
+      } else if (currentPage >= totalPages - 3) {
+        // Show ellipsis and last 4 pages
+        pages.push('ellipsis');
+        for (let i = Math.max(totalPages - 4, 2); i <= totalPages - 1; i++) {
+          pages.push(i);
+        }
+      } else {
+        // Show ellipsis, current page area, ellipsis
+        pages.push('ellipsis');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('ellipsis');
+      }
+
+      // Always show last page (if more than 1 page)
+      if (totalPages > 1) pages.push(totalPages);
+    }
+
+    return pages;
+  };
+
+  const pages = generatePageNumbers();
+
   return (
     <div className="flex items-center justify-between">
-      <p className="text-sm text-muted-foreground">
-        Page {currentPage} of {totalPages}
-      </p>
-      <div className="flex space-x-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center gap-4">
+        <p className="text-sm text-muted-foreground">
+          Page {currentPage} of {totalPages}
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Items per page:</span>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(value) => onPageSizeChange(Number(value))}
+          >
+            <SelectTrigger className="w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+              className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+            />
+          </PaginationItem>
+
+          {pages.map((page, index) => (
+            <PaginationItem key={index}>
+              {page === 'ellipsis' ? (
+                <PaginationEllipsis />
+              ) : (
+                <PaginationLink
+                  onClick={() => onPageChange(page as number)}
+                  isActive={currentPage === page}
+                  className="cursor-pointer"
+                >
+                  {page}
+                </PaginationLink>
+              )}
+            </PaginationItem>
+          ))}
+
+          <PaginationItem>
+            <PaginationNext
+              onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+              className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 };

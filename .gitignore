@@ -1,3 +1,15 @@
 build/bin
 node_modules
 frontend/dist
+cashflow
+*.db.backup*
+*.bak
+.DS_Store
+coverage.out
+coverage.html
+*.log
+*.tmp
+init_db.sql
+package.json
+package-lock.json
+components.json

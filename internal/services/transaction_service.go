@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"cashflow/internal/database"
-	"cashflow/internal/db/sqlc"
+	db "cashflow/internal/db/sqlc"
 )
 
 type TransactionService struct {
@@ -59,6 +59,7 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, params Creat
 		Attachments:          toSqlNullString(string(attachmentsJSON)),
 		TaxAmount:            toSqlNullFloat64(params.TaxAmount),
 		DiscountAmount:       toSqlNullFloat64(params.DiscountAmount),
+		DueAmount:            toSqlNullFloat64(params.DueAmount),
 		Currency:             toSqlNullString(params.Currency),
 		ExchangeRate:         toSqlNullFloat64(params.ExchangeRate),
 		IsRecurring:          toSqlNullBool(params.IsRecurring),
@@ -101,7 +102,7 @@ func (s *TransactionService) ListTransactions(ctx context.Context, params ListTr
 		params.Limit = 50
 	}
 
-	return s.db.Queries().ListTransactions(ctx, db.ListTransactionsParams{
+	result, err := s.db.Queries().ListTransactions(ctx, db.ListTransactionsParams{
 		CreatedBy:             params.CreatedBy,
 		FromDate:              params.FromDate,
 		ToDate:                params.ToDate,
@@ -111,9 +112,13 @@ func (s *TransactionService) ListTransactions(ctx context.Context, params ListTr
 		PaymentMethodFilter:   arrayToCommaSeparated(params.PaymentMethodFilter),
 		CustomerVendorSearch:  params.CustomerVendorSearch,
 		DescriptionSearch:     params.DescriptionSearch,
+		MinDueAmount:          params.MinDueAmount,
+		MaxDueAmount:          params.MaxDueAmount,
 		Limit:                 int64(params.Limit),
 		Offset:                int64(params.Offset),
 	})
+
+	return result, err
 }
 
 // UpdateTransaction updates an existing transaction
@@ -142,6 +147,7 @@ func (s *TransactionService) UpdateTransaction(ctx context.Context, id string, p
 		Attachments:          toSqlNullString(string(attachmentsJSON)),
 		TaxAmount:            toSqlNullFloat64(params.TaxAmount),
 		DiscountAmount:       toSqlNullFloat64(params.DiscountAmount),
+		DueAmount:            toSqlNullFloat64(params.DueAmount),
 		Currency:             toSqlNullString(params.Currency),
 		ExchangeRate:         toSqlNullFloat64(params.ExchangeRate),
 		IsRecurring:          toSqlNullBool(params.IsRecurring),
@@ -282,6 +288,7 @@ type CreateTransactionParams struct {
 	Attachments         []string  `json:"attachments"`
 	TaxAmount           float64   `json:"tax_amount"`
 	DiscountAmount      float64   `json:"discount_amount"`
+	DueAmount           float64   `json:"due_amount"`
 	Currency            string    `json:"currency"`
 	ExchangeRate        float64   `json:"exchange_rate"`
 	IsRecurring         bool      `json:"is_recurring"`
@@ -307,6 +314,7 @@ type UpdateTransactionParams struct {
 	Attachments        []string `json:"attachments"`
 	TaxAmount          float64  `json:"tax_amount"`
 	DiscountAmount     float64  `json:"discount_amount"`
+	DueAmount          float64  `json:"due_amount"`
 	Currency           string   `json:"currency"`
 	ExchangeRate       float64  `json:"exchange_rate"`
 	IsRecurring        bool     `json:"is_recurring"`
@@ -324,6 +332,8 @@ type ListTransactionParams struct {
 	PaymentMethodFilter   []string `json:"payment_method"`
 	CustomerVendorSearch  string   `json:"customer_vendor"`
 	DescriptionSearch     string   `json:"search"`
+	MinDueAmount          float64  `json:"min_due_amount"`
+	MaxDueAmount          float64  `json:"max_due_amount"`
 	Limit                 int      `json:"limit"`
 	Offset                int      `json:"offset"`
 }

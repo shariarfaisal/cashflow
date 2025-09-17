@@ -47,6 +47,7 @@ type Transaction struct {
 	Attachments         sql.NullString  `json:"attachments"`
 	TaxAmount           sql.NullFloat64 `json:"tax_amount"`
 	DiscountAmount      sql.NullFloat64 `json:"discount_amount"`
+	DueAmount           sql.NullFloat64 `json:"due_amount"`
 	NetAmount           sql.NullFloat64 `json:"net_amount"`
 	Currency            sql.NullString  `json:"currency"`
 	ExchangeRate        sql.NullFloat64 `json:"exchange_rate"`

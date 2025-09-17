@@ -3,14 +3,14 @@ INSERT INTO transactions (
     type, description, amount, transaction_date,
     category_id, tags, customer_vendor, payment_method_id,
     payment_status, reference_number, invoice_number,
-    notes, attachments, tax_amount, discount_amount,
+    notes, attachments, tax_amount, discount_amount, due_amount,
     currency, exchange_rate, is_recurring, recurring_frequency,
     recurring_end_date, parent_transaction_id, created_by
 ) VALUES (
     ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?,
-    ?, ?, ?, ?,
+    ?, ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?
 ) RETURNING *;
@@ -31,6 +31,8 @@ WHERE deleted_at IS NULL
     AND (sqlc.arg('payment_method_filter') = '' OR payment_method_id = sqlc.arg('payment_method_filter') OR sqlc.arg('payment_method_filter') LIKE '%' || payment_method_id || '%')
     AND (sqlc.arg('customer_vendor_search') = '' OR customer_vendor LIKE '%' || sqlc.arg('customer_vendor_search') || '%')
     AND (sqlc.arg('description_search') = '' OR description LIKE '%' || sqlc.arg('description_search') || '%')
+    AND (sqlc.arg('min_due_amount') = 0 OR due_amount >= sqlc.arg('min_due_amount'))
+    AND (sqlc.arg('max_due_amount') = 0 OR due_amount <= sqlc.arg('max_due_amount'))
 ORDER BY transaction_date DESC, created_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
@@ -52,6 +54,7 @@ SET
     attachments = ?,
     tax_amount = ?,
     discount_amount = ?,
+    due_amount = ?,
     currency = ?,
     exchange_rate = ?,
     is_recurring = ?,
@@ -176,7 +179,9 @@ WHERE deleted_at IS NULL
     AND (sqlc.arg('payment_status_filter') = '' OR payment_status = sqlc.arg('payment_status_filter') OR sqlc.arg('payment_status_filter') LIKE '%' || payment_status || '%')
     AND (sqlc.arg('payment_method_filter') = '' OR payment_method_id = sqlc.arg('payment_method_filter') OR sqlc.arg('payment_method_filter') LIKE '%' || payment_method_id || '%')
     AND (sqlc.arg('customer_vendor_search') = '' OR customer_vendor LIKE '%' || sqlc.arg('customer_vendor_search') || '%')
-    AND (sqlc.arg('description_search') = '' OR description LIKE '%' || sqlc.arg('description_search') || '%');
+    AND (sqlc.arg('description_search') = '' OR description LIKE '%' || sqlc.arg('description_search') || '%')
+    AND (sqlc.arg('min_due_amount') = 0 OR due_amount >= sqlc.arg('min_due_amount'))
+    AND (sqlc.arg('max_due_amount') = 0 OR due_amount <= sqlc.arg('max_due_amount'));
 
 -- name: GetDescriptionSuggestions :many
 SELECT DISTINCT description, COUNT(*) as frequency

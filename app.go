@@ -406,6 +406,7 @@ type TransactionResponse struct {
 	Attachments         []string `json:"attachments"`
 	TaxAmount           float64  `json:"tax_amount"`
 	DiscountAmount      float64  `json:"discount_amount"`
+	DueAmount           float64  `json:"due_amount"`
 	NetAmount           float64  `json:"net_amount"`
 	Currency            string   `json:"currency"`
 	ExchangeRate        float64  `json:"exchange_rate"`
@@ -506,6 +507,7 @@ func (a *App) convertTransaction(t *db.Transaction) *TransactionResponse {
 		Attachments:         attachments,
 		TaxAmount:           nullFloat64ToFloat64(t.TaxAmount),
 		DiscountAmount:      nullFloat64ToFloat64(t.DiscountAmount),
+		DueAmount:           nullFloat64ToFloat64(t.DueAmount),
 		NetAmount:           nullFloat64ToFloat64(t.NetAmount),
 		Currency:            nullStringToString(t.Currency),
 		ExchangeRate:        nullFloat64ToFloat64(t.ExchangeRate),

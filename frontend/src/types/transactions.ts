@@ -10,13 +10,14 @@ export interface TransactionResponse {
   customer_vendor: string;
   payment_method: string; // Now dynamic from payment_methods table
   payment_method_id: string;
-  payment_status: 'pending' | 'completed' | 'partial' | 'cancelled';
+  payment_status: 'pending' | 'completed' | 'partial' | 'due' | 'cancelled';
   reference_number: string;
   invoice_number: string;
   notes: string;
   attachments: string[];
   tax_amount: number;
   discount_amount: number;
+  due_amount: number;
   net_amount: number;
   currency: string;
   exchange_rate: number;
@@ -45,6 +46,7 @@ export interface CreateTransactionParams {
   attachments?: string[];
   tax_amount?: number;
   discount_amount?: number;
+  due_amount?: number;
   currency?: string;
   exchange_rate?: number;
   is_recurring?: boolean;
@@ -70,6 +72,7 @@ export interface UpdateTransactionParams {
   attachments?: string[];
   tax_amount?: number;
   discount_amount?: number;
+  due_amount?: number;
   currency?: string;
   exchange_rate?: number;
   is_recurring?: boolean;
@@ -92,6 +95,8 @@ export interface ListTransactionParams {
   invoice_number?: string;
   min_amount?: number;
   max_amount?: number;
+  min_due_amount?: number;
+  max_due_amount?: number;
   has_tax?: boolean;
   has_discount?: boolean;
   is_recurring?: boolean;

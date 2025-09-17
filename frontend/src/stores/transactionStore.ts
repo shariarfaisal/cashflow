@@ -21,6 +21,7 @@ interface FormFieldVisibility {
   invoice_number: boolean;
   tax_amount: boolean;
   discount_amount: boolean;
+  due_amount: boolean;
   tags: boolean;
   recurring: boolean;
   notes: boolean;
@@ -145,10 +146,11 @@ const defaultTableColumns: TableColumn[] = [
   { id: 'tags', label: 'Tags', visible: false, order: 11 },
   { id: 'tax_amount', label: 'Tax', visible: false, order: 12 },
   { id: 'discount_amount', label: 'Discount', visible: false, order: 13 },
-  { id: 'net_amount', label: 'Net Amount', visible: false, order: 14 },
-  { id: 'currency', label: 'Currency', visible: false, order: 15 },
-  { id: 'recurring', label: 'Recurring', visible: false, order: 16 },
-  { id: 'actions', label: 'Actions', visible: true, order: 17 },
+  { id: 'due_amount', label: 'Due Amount', visible: false, order: 14 },
+  { id: 'net_amount', label: 'Net Amount', visible: false, order: 15 },
+  { id: 'currency', label: 'Currency', visible: false, order: 16 },
+  { id: 'recurring', label: 'Recurring', visible: false, order: 17 },
+  { id: 'actions', label: 'Actions', visible: true, order: 18 },
 ];
 
 const defaultFormFieldVisibility: FormFieldVisibility = {
@@ -160,6 +162,7 @@ const defaultFormFieldVisibility: FormFieldVisibility = {
   invoice_number: false,
   tax_amount: false,
   discount_amount: false,
+  due_amount: false,
   tags: false,
   recurring: false,
   notes: true,
@@ -175,8 +178,9 @@ const defaultFormFieldOrder: FormFieldOrder = {
   invoice_number: 6,
   tax_amount: 7,
   discount_amount: 8,
-  recurring: 9,
-  notes: 10,
+  due_amount: 9,
+  recurring: 10,
+  notes: 11,
 };
 
 const defaultFilterVisibility: FilterVisibility = {

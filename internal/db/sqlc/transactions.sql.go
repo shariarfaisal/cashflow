@@ -23,6 +23,8 @@ WHERE deleted_at IS NULL
     AND (?7 = '' OR payment_method_id = ?7 OR ?7 LIKE '%' || payment_method_id || '%')
     AND (?8 = '' OR customer_vendor LIKE '%' || ?8 || '%')
     AND (?9 = '' OR description LIKE '%' || ?9 || '%')
+    AND (?10 = 0 OR due_amount >= ?10)
+    AND (?11 = 0 OR due_amount <= ?11)
 `
 
 type CountTransactionsParams struct {
@@ -35,6 +37,8 @@ type CountTransactionsParams struct {
 	PaymentMethodFilter  interface{} `json:"payment_method_filter"`
 	CustomerVendorSearch interface{} `json:"customer_vendor_search"`
 	DescriptionSearch    interface{} `json:"description_search"`
+	MinDueAmount         interface{} `json:"min_due_amount"`
+	MaxDueAmount         interface{} `json:"max_due_amount"`
 }
 
 func (q *Queries) CountTransactions(ctx context.Context, arg CountTransactionsParams) (int64, error) {
@@ -48,6 +52,8 @@ func (q *Queries) CountTransactions(ctx context.Context, arg CountTransactionsPa
 		arg.PaymentMethodFilter,
 		arg.CustomerVendorSearch,
 		arg.DescriptionSearch,
+		arg.MinDueAmount,
+		arg.MaxDueAmount,
 	)
 	var count int64
 	err := row.Scan(&count)
@@ -59,17 +65,17 @@ INSERT INTO transactions (
     type, description, amount, transaction_date,
     category_id, tags, customer_vendor, payment_method_id,
     payment_status, reference_number, invoice_number,
-    notes, attachments, tax_amount, discount_amount,
+    notes, attachments, tax_amount, discount_amount, due_amount,
     currency, exchange_rate, is_recurring, recurring_frequency,
     recurring_end_date, parent_transaction_id, created_by
 ) VALUES (
     ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?,
-    ?, ?, ?, ?,
+    ?, ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?
-) RETURNING id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at
+) RETURNING id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, due_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at
 `
 
 type CreateTransactionParams struct {
@@ -88,6 +94,7 @@ type CreateTransactionParams struct {
 	Attachments         sql.NullString  `json:"attachments"`
 	TaxAmount           sql.NullFloat64 `json:"tax_amount"`
 	DiscountAmount      sql.NullFloat64 `json:"discount_amount"`
+	DueAmount           sql.NullFloat64 `json:"due_amount"`
 	Currency            sql.NullString  `json:"currency"`
 	ExchangeRate        sql.NullFloat64 `json:"exchange_rate"`
 	IsRecurring         sql.NullBool    `json:"is_recurring"`
@@ -114,6 +121,7 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 		arg.Attachments,
 		arg.TaxAmount,
 		arg.DiscountAmount,
+		arg.DueAmount,
 		arg.Currency,
 		arg.ExchangeRate,
 		arg.IsRecurring,
@@ -140,6 +148,7 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 		&i.Attachments,
 		&i.TaxAmount,
 		&i.DiscountAmount,
+		&i.DueAmount,
 		&i.NetAmount,
 		&i.Currency,
 		&i.ExchangeRate,
@@ -414,7 +423,7 @@ func (q *Queries) GetMonthlyTrend(ctx context.Context, arg GetMonthlyTrendParams
 }
 
 const getRecentTransactions = `-- name: GetRecentTransactions :many
-SELECT id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at FROM transactions
+SELECT id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, due_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at FROM transactions
 WHERE deleted_at IS NULL
     AND created_by = ?
 ORDER BY created_at DESC
@@ -452,6 +461,7 @@ func (q *Queries) GetRecentTransactions(ctx context.Context, arg GetRecentTransa
 			&i.Attachments,
 			&i.TaxAmount,
 			&i.DiscountAmount,
+			&i.DueAmount,
 			&i.NetAmount,
 			&i.Currency,
 			&i.ExchangeRate,
@@ -547,7 +557,7 @@ func (q *Queries) GetTopCustomersVendors(ctx context.Context, arg GetTopCustomer
 }
 
 const getTransaction = `-- name: GetTransaction :one
-SELECT id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at FROM transactions
+SELECT id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, due_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at FROM transactions
 WHERE id = ? AND deleted_at IS NULL
 `
 
@@ -571,6 +581,7 @@ func (q *Queries) GetTransaction(ctx context.Context, id string) (Transaction, e
 		&i.Attachments,
 		&i.TaxAmount,
 		&i.DiscountAmount,
+		&i.DueAmount,
 		&i.NetAmount,
 		&i.Currency,
 		&i.ExchangeRate,
@@ -697,7 +708,7 @@ func (q *Queries) GetTransactionsByCategory(ctx context.Context, arg GetTransact
 }
 
 const listTransactions = `-- name: ListTransactions :many
-SELECT id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at FROM transactions
+SELECT id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, due_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at FROM transactions
 WHERE deleted_at IS NULL
     AND created_by = ?1
     AND (?2 = '' OR transaction_date >= ?2)
@@ -708,8 +719,10 @@ WHERE deleted_at IS NULL
     AND (?7 = '' OR payment_method_id = ?7 OR ?7 LIKE '%' || payment_method_id || '%')
     AND (?8 = '' OR customer_vendor LIKE '%' || ?8 || '%')
     AND (?9 = '' OR description LIKE '%' || ?9 || '%')
+    AND (?10 = 0 OR due_amount >= ?10)
+    AND (?11 = 0 OR due_amount <= ?11)
 ORDER BY transaction_date DESC, created_at DESC
-LIMIT ?11 OFFSET ?10
+LIMIT ?13 OFFSET ?12
 `
 
 type ListTransactionsParams struct {
@@ -722,6 +735,8 @@ type ListTransactionsParams struct {
 	PaymentMethodFilter  interface{} `json:"payment_method_filter"`
 	CustomerVendorSearch interface{} `json:"customer_vendor_search"`
 	DescriptionSearch    interface{} `json:"description_search"`
+	MinDueAmount         interface{} `json:"min_due_amount"`
+	MaxDueAmount         interface{} `json:"max_due_amount"`
 	Offset               int64       `json:"offset"`
 	Limit                int64       `json:"limit"`
 }
@@ -737,6 +752,8 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 		arg.PaymentMethodFilter,
 		arg.CustomerVendorSearch,
 		arg.DescriptionSearch,
+		arg.MinDueAmount,
+		arg.MaxDueAmount,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -764,6 +781,7 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 			&i.Attachments,
 			&i.TaxAmount,
 			&i.DiscountAmount,
+			&i.DueAmount,
 			&i.NetAmount,
 			&i.Currency,
 			&i.ExchangeRate,
@@ -790,7 +808,7 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 }
 
 const searchTransactions = `-- name: SearchTransactions :many
-SELECT id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at FROM transactions
+SELECT id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, due_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at FROM transactions
 WHERE deleted_at IS NULL
     AND created_by = ?
     AND (
@@ -850,6 +868,7 @@ func (q *Queries) SearchTransactions(ctx context.Context, arg SearchTransactions
 			&i.Attachments,
 			&i.TaxAmount,
 			&i.DiscountAmount,
+			&i.DueAmount,
 			&i.NetAmount,
 			&i.Currency,
 			&i.ExchangeRate,
@@ -893,6 +912,7 @@ SET
     attachments = ?,
     tax_amount = ?,
     discount_amount = ?,
+    due_amount = ?,
     currency = ?,
     exchange_rate = ?,
     is_recurring = ?,
@@ -900,7 +920,7 @@ SET
     recurring_end_date = ?,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = ? AND deleted_at IS NULL
-RETURNING id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at
+RETURNING id, type, description, amount, transaction_date, category_id, tags, customer_vendor, payment_method_id, payment_status, reference_number, invoice_number, notes, attachments, tax_amount, discount_amount, due_amount, net_amount, currency, exchange_rate, is_recurring, recurring_frequency, recurring_end_date, parent_transaction_id, created_by, created_at, updated_at, deleted_at
 `
 
 type UpdateTransactionParams struct {
@@ -919,6 +939,7 @@ type UpdateTransactionParams struct {
 	Attachments        sql.NullString  `json:"attachments"`
 	TaxAmount          sql.NullFloat64 `json:"tax_amount"`
 	DiscountAmount     sql.NullFloat64 `json:"discount_amount"`
+	DueAmount          sql.NullFloat64 `json:"due_amount"`
 	Currency           sql.NullString  `json:"currency"`
 	ExchangeRate       sql.NullFloat64 `json:"exchange_rate"`
 	IsRecurring        sql.NullBool    `json:"is_recurring"`
@@ -944,6 +965,7 @@ func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionPa
 		arg.Attachments,
 		arg.TaxAmount,
 		arg.DiscountAmount,
+		arg.DueAmount,
 		arg.Currency,
 		arg.ExchangeRate,
 		arg.IsRecurring,
@@ -969,6 +991,7 @@ func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionPa
 		&i.Attachments,
 		&i.TaxAmount,
 		&i.DiscountAmount,
+		&i.DueAmount,
 		&i.NetAmount,
 		&i.Currency,
 		&i.ExchangeRate,

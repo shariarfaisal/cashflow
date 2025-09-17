@@ -32,6 +32,8 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { TransactionResponse, CreateTransactionParams, UpdateTransactionParams, CategoryResponse, PaymentMethodResponse, CreateCategoryParams, ListTransactionParams } from '@/types/transactions';
 import { useTransactionStore } from '@/stores/transactionStore';
+import { FormFieldSettings } from './form-components/FormFieldSettings';
+import { TaxDiscountFields } from './form-components/TaxDiscountFields';
 import * as App from '../../../wailsjs/go/main/App';
 
 const transactionSchema = z.object({
@@ -42,12 +44,13 @@ const transactionSchema = z.object({
   category: z.string().optional(),
   customer_vendor: z.string().optional(),
   payment_method: z.string().optional(),
-  payment_status: z.enum(['pending', 'completed', 'partial', 'cancelled']).optional(),
+  payment_status: z.enum(['pending', 'completed', 'partial', 'due', 'cancelled']).optional(),
   reference_number: z.string().optional(),
   invoice_number: z.string().optional(),
   notes: z.string().optional(),
   tax_amount: z.number().min(0).optional(),
   discount_amount: z.number().min(0).optional(),
+  due_amount: z.number().min(0).optional(),
   tags: z.array(z.string()).optional(),
   is_recurring: z.boolean().optional(),
   recurring_frequency: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly', '']).optional(),
@@ -63,6 +66,7 @@ interface TransactionFormProps {
   onSubmit: (data: CreateTransactionParams | UpdateTransactionParams) => Promise<void>;
   mode?: 'create' | 'edit';
   isInSidebar?: boolean;
+  closeAfterSubmit?: boolean;
 }
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({
@@ -72,6 +76,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   onSubmit,
   mode = 'create',
   isInSidebar = false,
+  closeAfterSubmit = true,
 }) => {
   const [loading, setLoading] = useState(false);
   const [date, setDate] = useState<Date | undefined>(transaction ? new Date(transaction.transaction_date) : new Date());
@@ -82,7 +87,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
   const [paymentMethodSearch, setPaymentMethodSearch] = useState('');
-  const [showFieldSettings, setShowFieldSettings] = useState(false);
   const [newCategoryForm, setNewCategoryForm] = useState<CreateCategoryParams>({
     name: '',
     type: 'expense',
@@ -120,18 +124,20 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       notes: transaction?.notes || '',
       tax_amount: transaction?.tax_amount || 0,
       discount_amount: transaction?.discount_amount || 0,
+      due_amount: transaction?.due_amount || 0,
       is_recurring: transaction?.is_recurring || false,
       recurring_frequency: transaction?.recurring_frequency || '',
       recurring_end_date: transaction?.recurring_end_date || '',
     },
   });
 
-  const { formFieldVisibility, setFormFieldVisibility, resetFormFieldVisibility } = useTransactionStore();
+  const { formFieldVisibility, setFormFieldVisibility, resetFormFieldVisibility, formFieldOrder, setFormFieldOrder, resetFormFieldOrder } = useTransactionStore();
   const transactionType = watch('type');
   const isRecurring = watch('is_recurring');
   const amount = watch('amount');
   const taxAmount = watch('tax_amount');
   const discountAmount = watch('discount_amount');
+  const dueAmount = watch('due_amount');
 
   const netAmount = amount + (taxAmount || 0) - (discountAmount || 0);
 
@@ -182,8 +188,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           created_by: '',
           from_date: '',
           to_date: '',
+          type: [],
+          category: [],
+          payment_status: [],
+          payment_method: [],
           customer_vendor: '',
           search: '',
+          min_due_amount: 0,
+          max_due_amount: 0,
           limit: 5,
           offset: 0,
         });
@@ -217,8 +229,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           created_by: '',
           from_date: '',
           to_date: '',
+          type: [],
+          category: [],
+          payment_status: [],
+          payment_method: [],
           customer_vendor: '',
           search: '',
+          min_due_amount: 0,
+          max_due_amount: 0,
           limit: 10,
           offset: 0,
         });
@@ -290,6 +308,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         notes: transaction.notes || '',
         tax_amount: transaction.tax_amount || 0,
         discount_amount: transaction.discount_amount || 0,
+        due_amount: transaction.due_amount || 0,
         is_recurring: transaction.is_recurring,
         recurring_frequency: transaction.recurring_frequency || '',
         recurring_end_date: transaction.recurring_end_date || '',
@@ -343,6 +362,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         notes: '',
         tax_amount: 0,
         discount_amount: 0,
+        due_amount: 0,
         is_recurring: false,
         recurring_frequency: '',
         recurring_end_date: '',
@@ -356,7 +376,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       setCustomerVendorInputValue('');
       setCustomerVendorSuggestions([]);
       setShowCustomerVendorSuggestions(false);
-      onClose();
+      if (closeAfterSubmit) {
+        onClose();
+      }
     } catch (error) {
       console.error('Error submitting transaction:', error);
     } finally {
@@ -892,66 +914,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             </div>
           )}
 
-          {(formFieldVisibility.tax_amount || formFieldVisibility.discount_amount) && (
-            <div className={`grid gap-4 ${formFieldVisibility.tax_amount && formFieldVisibility.discount_amount ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {formFieldVisibility.tax_amount && (
-                <div className="space-y-2">
-                  <Label htmlFor="tax_amount" className="flex items-center gap-2">
-                    <Percent className="h-4 w-4" />
-                    Tax Amount
-                  </Label>
-                  <Input
-                    id="tax_amount"
-                    type="number"
-                    step="1"
-                    min="0"
-                    {...register('tax_amount', { valueAsNumber: true })}
-                    placeholder="0"
-                    onWheel={(e) => e.currentTarget.blur()}
-                    onKeyDown={(e) => {
-                      if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
-                        e.preventDefault();
-                      }
-                    }}
-                  />
-                </div>
-              )}
-
-              {formFieldVisibility.discount_amount && (
-                <div className="space-y-2">
-                  <Label htmlFor="discount_amount" className="flex items-center gap-2">
-                    <Minus className="h-4 w-4" />
-                    Discount Amount
-                  </Label>
-                  <Input
-                    id="discount_amount"
-                    type="number"
-                    step="1"
-                    min="0"
-                    {...register('discount_amount', { valueAsNumber: true })}
-                    placeholder="0"
-                    onWheel={(e) => e.currentTarget.blur()}
-                    onKeyDown={(e) => {
-                      if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
-                        e.preventDefault();
-                      }
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {((taxAmount || 0) > 0 || (discountAmount || 0) > 0) && (
-            <div className="rounded-lg bg-muted p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Net Amount</span>
-                <span className="text-lg font-semibold">
-                  ${netAmount.toFixed(2)}
-                </span>
-              </div>
-            </div>
-          )}
+          <TaxDiscountFields
+            register={register}
+            taxAmount={taxAmount || 0}
+            discountAmount={discountAmount || 0}
+            dueAmount={dueAmount || 0}
+            netAmount={netAmount}
+            showTaxField={formFieldVisibility.tax_amount}
+            showDiscountField={formFieldVisibility.discount_amount}
+            showDueField={formFieldVisibility.due_amount}
+          />
 
           {formFieldVisibility.invoice_number && (
             <div className="space-y-2">
@@ -1063,71 +1035,26 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     return (
       <div>
         <div className="flex items-center justify-end mb-4">
-          <Popover open={showFieldSettings} onOpenChange={setShowFieldSettings}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                title="Field Settings"
-                className="h-8 w-8"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Form Fields</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const defaultVisibility = getFormFieldDefaults();
-                      setFormFieldVisibility(defaultVisibility);
-                    }}
-                  >
-                    Reset
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Choose which optional fields to show in the form
-                </p>
-                <div className="space-y-1">
-                  {[
-                    { key: 'category', label: 'Category' },
-                    { key: 'customer_vendor', label: 'Customer/Vendor' },
-                    { key: 'payment_method', label: 'Payment Method' },
-                    { key: 'payment_status', label: 'Payment Status' },
-                    { key: 'reference_number', label: 'Reference Number' },
-                    { key: 'invoice_number', label: 'Invoice Number' },
-                    { key: 'tax_amount', label: 'Tax Amount' },
-                    { key: 'discount_amount', label: 'Discount Amount' },
-                    { key: 'tags', label: 'Tags' },
-                    { key: 'recurring', label: 'Recurring Settings' },
-                    { key: 'notes', label: 'Notes' },
-                  ].map((field) => (
-                    <div key={field.key} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`sidebar-${field.key}`}
-                        checked={formFieldVisibility[field.key as keyof typeof formFieldVisibility]}
-                        onChange={(e) =>
-                          setFormFieldVisibility({
-                            [field.key]: e.target.checked
-                          })
-                        }
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor={`sidebar-${field.key}`} className="text-sm">
-                        {field.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <FormFieldSettings
+            visibility={formFieldVisibility as unknown as Record<string, boolean>}
+            order={formFieldOrder}
+            onToggle={(field: string) => {
+              setFormFieldVisibility({
+                [field]: !formFieldVisibility[field as keyof typeof formFieldVisibility]
+              });
+            }}
+            onReorder={(fields) => {
+              const newOrder: Record<string, number> = {};
+              fields.forEach((field) => {
+                newOrder[field.key] = field.order;
+              });
+              setFormFieldOrder(newOrder);
+            }}
+            onReset={() => {
+              resetFormFieldVisibility();
+              resetFormFieldOrder();
+            }}
+          />
         </div>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           {formFields}
@@ -1152,69 +1079,26 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 </DialogDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Popover open={showFieldSettings} onOpenChange={setShowFieldSettings}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      title="Field Settings"
-                      className="h-8 w-8"
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80" align="end">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">Field Visibility</h4>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={resetFormFieldVisibility}
-                          className="text-xs"
-                        >
-                          Reset
-                        </Button>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Choose which optional fields to show in the form
-                      </p>
-                      <div className="space-y-1">
-                        {[
-                          { key: 'category', label: 'Category' },
-                          { key: 'customer_vendor', label: 'Customer/Vendor' },
-                          { key: 'payment_method', label: 'Payment Method' },
-                          { key: 'payment_status', label: 'Payment Status' },
-                          { key: 'reference_number', label: 'Reference Number' },
-                          { key: 'invoice_number', label: 'Invoice Number' },
-                          { key: 'tax_amount', label: 'Tax Amount' },
-                          { key: 'discount_amount', label: 'Discount Amount' },
-                          { key: 'tags', label: 'Tags' },
-                          { key: 'recurring', label: 'Recurring Settings' },
-                          { key: 'notes', label: 'Notes' },
-                        ].map((field) => (
-                          <div key={field.key} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={field.key}
-                              checked={formFieldVisibility[field.key as keyof typeof formFieldVisibility]}
-                              onChange={(e) =>
-                                setFormFieldVisibility({
-                                  [field.key]: e.target.checked
-                                })
-                              }
-                              className="rounded border-gray-300"
-                            />
-                            <Label htmlFor={field.key} className="text-sm">
-                              {field.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <FormFieldSettings
+                  visibility={formFieldVisibility as unknown as Record<string, boolean>}
+                  order={formFieldOrder}
+                  onToggle={(field: string) => {
+                    setFormFieldVisibility({
+                      [field]: !formFieldVisibility[field as keyof typeof formFieldVisibility]
+                    });
+                  }}
+                  onReorder={(fields) => {
+                    const newOrder: Record<string, number> = {};
+                    fields.forEach((field) => {
+                      newOrder[field.key] = field.order;
+                    });
+                    setFormFieldOrder(newOrder);
+                  }}
+                  onReset={() => {
+                    resetFormFieldVisibility();
+                    resetFormFieldOrder();
+                  }}
+                />
               </div>
             </div>
           </DialogHeader>
