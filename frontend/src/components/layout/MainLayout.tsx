@@ -16,8 +16,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, className }) =
 
   return (
     <div className={cn("min-h-screen bg-background", className)}>
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
+      <header className="border-b h-16">
+        <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <h1 className="text-2xl font-bold">CashFlow</h1>
@@ -57,7 +57,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, className }) =
           </div>
         </div>
       </header>
-      <main className="container mx-auto px-4 py-8">
+      <main className="h-[calc(100vh-64px)] overflow-y-auto">
         {children}
       </main>
     </div>

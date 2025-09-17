@@ -50,6 +50,7 @@ interface TransactionState {
   viewMode: 'table' | 'grid' | 'calendar';
   showForm: boolean;
   formMode: 'create' | 'edit';
+  sidebarMode: boolean;
 
   // Filters
   filters: ListTransactionParams;
@@ -88,6 +89,7 @@ interface TransactionState {
   setViewMode: (mode: 'table' | 'grid' | 'calendar') => void;
   setShowForm: (show: boolean) => void;
   setFormMode: (mode: 'create' | 'edit') => void;
+  setSidebarMode: (enabled: boolean) => void;
   setFilters: (filters: Partial<ListTransactionParams>) => void;
   resetFilters: () => void;
   setCurrentPage: (page: number) => void;
@@ -183,7 +185,7 @@ const defaultFilterVisibility: FilterVisibility = {
   type: true,
   category: true,
   payment_status: true,
-  payment_method: false,
+  payment_method: true,
   customer_vendor: true,
   tags: false,
   reference_number: false,
@@ -210,6 +212,7 @@ export const useTransactionStore = create<TransactionState>()(
         viewMode: 'table',
         showForm: false,
         formMode: 'create',
+        sidebarMode: false,
         filters: defaultFilters,
         currentPage: 1,
         pageSize: 50,
@@ -232,6 +235,7 @@ export const useTransactionStore = create<TransactionState>()(
         setViewMode: (viewMode) => set({ viewMode }),
         setShowForm: (showForm) => set({ showForm }),
         setFormMode: (formMode) => set({ formMode }),
+        setSidebarMode: (sidebarMode) => set({ sidebarMode }),
         setFilters: (filters) => set((state) => ({
           filters: { ...state.filters, ...filters },
           currentPage: 1, // Reset to first page when filters change

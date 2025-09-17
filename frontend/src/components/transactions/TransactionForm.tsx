@@ -62,6 +62,7 @@ interface TransactionFormProps {
   onClose: () => void;
   onSubmit: (data: CreateTransactionParams | UpdateTransactionParams) => Promise<void>;
   mode?: 'create' | 'edit';
+  isInSidebar?: boolean;
 }
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({
@@ -70,6 +71,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   onClose,
   onSubmit,
   mode = 'create',
+  isInSidebar = false,
 }) => {
   const [loading, setLoading] = useState(false);
   const [date, setDate] = useState<Date | undefined>(transaction ? new Date(transaction.transaction_date) : new Date());
@@ -184,7 +186,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           search: '',
           limit: 5,
           offset: 0,
-        } as ListTransactionParams);
+        });
 
         if (recentTransactions && Array.isArray(recentTransactions)) {
           // Convert to suggestion format and remove duplicates
@@ -219,7 +221,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           search: '',
           limit: 10,
           offset: 0,
-        } as ListTransactionParams);
+        });
 
         if (recentTransactions && Array.isArray(recentTransactions)) {
           // Convert to suggestion format and remove duplicates, filter out empty values
@@ -447,83 +449,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     { value: 'yearly', label: 'Yearly' },
   ];
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-0 shadow-2xl">
-        <DialogHeader className="pb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-semibold text-gray-900">{mode === 'create' ? 'Add New Transaction' : 'Edit Transaction'}</DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 mt-1">
-                {mode === 'create'
-                  ? 'Fill in the details to create a new transaction'
-                  : 'Update the transaction details'}
-              </DialogDescription>
-            </div>
-            <Popover open={showFieldSettings} onOpenChange={setShowFieldSettings}>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" title="Field Settings">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80" align="end">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">Field Visibility</h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={resetFormFieldVisibility}
-                      className="text-xs"
-                    >
-                      Reset
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Choose which optional fields to show in the form
-                  </p>
-                  <div className="space-y-1">
-                    {[
-                      { key: 'category', label: 'Category' },
-                      { key: 'customer_vendor', label: 'Customer/Vendor' },
-                      { key: 'payment_method', label: 'Payment Method' },
-                      { key: 'payment_status', label: 'Payment Status' },
-                      { key: 'reference_number', label: 'Reference Number' },
-                      { key: 'invoice_number', label: 'Invoice Number' },
-                      { key: 'tax_amount', label: 'Tax Amount' },
-                      { key: 'discount_amount', label: 'Discount Amount' },
-                      { key: 'tags', label: 'Tags' },
-                      { key: 'recurring', label: 'Recurring Settings' },
-                      { key: 'notes', label: 'Notes' },
-                    ].map((field) => (
-                      <div key={field.key} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={field.key}
-                          checked={formFieldVisibility[field.key as keyof typeof formFieldVisibility]}
-                          onChange={(e) =>
-                            setFormFieldVisibility({
-                              [field.key]: e.target.checked
-                            })
-                          }
-                          className="rounded border-gray-300"
-                        />
-                        <Label htmlFor={field.key} className="text-sm">
-                          {field.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          {/* Transaction Type Selection */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-4 gap-3">
+  // Form content that will be reused in both modal and sidebar modes
+  const formFields = (
+    <>
+      {/* Transaction Type Selection */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-4 gap-3">
               {typeOptions.map((option) => {
                 const IconComponent = option.icon;
                 const isActive = transactionType === option.value;
@@ -917,51 +848,47 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             </div>
           )}
 
-          {(formFieldVisibility.payment_status || formFieldVisibility.reference_number) && (
-            <div className={`grid gap-6 ${formFieldVisibility.payment_status && formFieldVisibility.reference_number ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {formFieldVisibility.payment_status && (
-                <div className="space-y-1">
-                  <Label htmlFor="payment_status" className="text-sm font-medium text-gray-700">
-                    Payment Status
-                  </Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { value: 'pending', label: 'Pending', activeColor: 'border-yellow-500 bg-yellow-500 text-white', inactiveColor: 'border-gray-200 text-gray-700 hover:border-yellow-300 hover:bg-yellow-50 bg-white' },
-                      { value: 'completed', label: 'Completed', activeColor: 'border-green-500 bg-green-500 text-white', inactiveColor: 'border-gray-200 text-gray-700 hover:border-green-300 hover:bg-green-50 bg-white' },
-                      { value: 'failed', label: 'Failed', activeColor: 'border-red-500 bg-red-500 text-white', inactiveColor: 'border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50 bg-white' }
-                    ].map((status) => {
-                      const isSelected = watch('payment_status') === status.value;
-                      return (
-                        <button
-                          key={status.value}
-                          type="button"
-                          onClick={() => setValue('payment_status', status.value as 'pending' | 'completed' | 'partial' | 'cancelled')}
-                          className={cn(
-                            'h-12 rounded-lg border-2 text-sm font-medium transition-all duration-200',
-                            isSelected ? status.activeColor : status.inactiveColor
-                          )}
-                        >
-                          {status.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+          {formFieldVisibility.payment_status && (
+            <div className="space-y-1">
+              <Label htmlFor="payment_status" className="text-sm font-medium text-gray-700">
+                Payment Status
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'pending', label: 'Pending', activeColor: 'border-yellow-500 bg-yellow-500 text-white', inactiveColor: 'border-gray-200 text-gray-700 hover:border-yellow-300 hover:bg-yellow-50 bg-white' },
+                  { value: 'completed', label: 'Completed', activeColor: 'border-green-500 bg-green-500 text-white', inactiveColor: 'border-gray-200 text-gray-700 hover:border-green-300 hover:bg-green-50 bg-white' },
+                  { value: 'failed', label: 'Failed', activeColor: 'border-red-500 bg-red-500 text-white', inactiveColor: 'border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50 bg-white' }
+                ].map((status) => {
+                  const isSelected = watch('payment_status') === status.value;
+                  return (
+                    <button
+                      key={status.value}
+                      type="button"
+                      onClick={() => setValue('payment_status', status.value as 'pending' | 'completed' | 'partial' | 'cancelled')}
+                      className={cn(
+                        'h-12 px-4 rounded-lg border-2 text-sm font-medium transition-all duration-200 flex-1 min-w-[100px]',
+                        isSelected ? status.activeColor : status.inactiveColor
+                      )}
+                    >
+                      {status.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-              {formFieldVisibility.reference_number && (
-                <div className="space-y-1">
-                  <Label htmlFor="reference_number" className="text-sm font-medium text-gray-700">
-                    Reference Number
-                  </Label>
-                  <Input
-                    id="reference_number"
-                    {...register('reference_number')}
-                    placeholder="Enter reference #"
-                    className="h-12 px-4 rounded-lg border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-indigo-500 "
-                  />
-                </div>
-              )}
+          {formFieldVisibility.reference_number && (
+            <div className="space-y-1">
+              <Label htmlFor="reference_number" className="text-sm font-medium text-gray-700">
+                Reference Number
+              </Label>
+              <Input
+                id="reference_number"
+                {...register('reference_number')}
+                placeholder="Enter reference #"
+                className="h-12 px-4 rounded-lg border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-indigo-500 "
+              />
             </div>
           )}
 
@@ -1110,7 +1037,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             </div>
           )}
 
-          <DialogFooter className="pt-6 flex gap-3">
+      {/* Action Buttons */}
+      <div className="pt-6 flex gap-3">
             <Button
               type="button"
               variant="outline"
@@ -1126,9 +1054,176 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             >
               {loading ? 'Saving...' : `Create ${transactionType.charAt(0).toUpperCase() + transactionType.slice(1)}`}
             </Button>
-          </DialogFooter>
+      </div>
+    </>
+  );
+
+  // When in sidebar mode, render just the form with settings button
+  if (isInSidebar) {
+    return (
+      <div>
+        <div className="flex items-center justify-end mb-4">
+          <Popover open={showFieldSettings} onOpenChange={setShowFieldSettings}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                title="Field Settings"
+                className="h-8 w-8"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Form Fields</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const defaultVisibility = getFormFieldDefaults();
+                      setFormFieldVisibility(defaultVisibility);
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Choose which optional fields to show in the form
+                </p>
+                <div className="space-y-1">
+                  {[
+                    { key: 'category', label: 'Category' },
+                    { key: 'customer_vendor', label: 'Customer/Vendor' },
+                    { key: 'payment_method', label: 'Payment Method' },
+                    { key: 'payment_status', label: 'Payment Status' },
+                    { key: 'reference_number', label: 'Reference Number' },
+                    { key: 'invoice_number', label: 'Invoice Number' },
+                    { key: 'tax_amount', label: 'Tax Amount' },
+                    { key: 'discount_amount', label: 'Discount Amount' },
+                    { key: 'tags', label: 'Tags' },
+                    { key: 'recurring', label: 'Recurring Settings' },
+                    { key: 'notes', label: 'Notes' },
+                  ].map((field) => (
+                    <div key={field.key} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`sidebar-${field.key}`}
+                        checked={formFieldVisibility[field.key as keyof typeof formFieldVisibility]}
+                        onChange={(e) =>
+                          setFormFieldVisibility({
+                            [field.key]: e.target.checked
+                          })
+                        }
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor={`sidebar-${field.key}`} className="text-sm">
+                        {field.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+          {formFields}
         </form>
-      </DialogContent>
+      </div>
+    );
+  }
+
+  // When in modal mode, render with Dialog wrapper
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-0 shadow-2xl">
+          <DialogHeader className="pb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-2xl font-semibold text-gray-900">
+                  {mode === 'create' ? 'Add New Transaction' : 'Edit Transaction'}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-gray-500 mt-2">
+                  Fill in the details of your transaction
+                </DialogDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Popover open={showFieldSettings} onOpenChange={setShowFieldSettings}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      title="Field Settings"
+                      className="h-8 w-8"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold">Field Visibility</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={resetFormFieldVisibility}
+                          className="text-xs"
+                        >
+                          Reset
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Choose which optional fields to show in the form
+                      </p>
+                      <div className="space-y-1">
+                        {[
+                          { key: 'category', label: 'Category' },
+                          { key: 'customer_vendor', label: 'Customer/Vendor' },
+                          { key: 'payment_method', label: 'Payment Method' },
+                          { key: 'payment_status', label: 'Payment Status' },
+                          { key: 'reference_number', label: 'Reference Number' },
+                          { key: 'invoice_number', label: 'Invoice Number' },
+                          { key: 'tax_amount', label: 'Tax Amount' },
+                          { key: 'discount_amount', label: 'Discount Amount' },
+                          { key: 'tags', label: 'Tags' },
+                          { key: 'recurring', label: 'Recurring Settings' },
+                          { key: 'notes', label: 'Notes' },
+                        ].map((field) => (
+                          <div key={field.key} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={field.key}
+                              checked={formFieldVisibility[field.key as keyof typeof formFieldVisibility]}
+                              onChange={(e) =>
+                                setFormFieldVisibility({
+                                  [field.key]: e.target.checked
+                                })
+                              }
+                              className="rounded border-gray-300"
+                            />
+                            <Label htmlFor={field.key} className="text-sm">
+                              {field.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+            {formFields}
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Quick Category Creation Dialog */}
       <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
@@ -1178,6 +1273,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Dialog>
+    </>
   );
 };

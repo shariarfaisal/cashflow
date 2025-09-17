@@ -3,6 +3,8 @@ import { format } from 'date-fns';
 import {
   Search,
   Calendar,
+  CalendarIcon,
+  CreditCard,
   Filter,
   X,
   Download,
@@ -42,11 +44,15 @@ import { ListTransactionParams } from '@/types/transactions';
 interface TransactionFiltersProps {
   onExport?: () => void;
   onImport?: () => void;
+  showAdvanced?: boolean;
+  onToggleAdvanced?: () => void;
 }
 
 export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
   onExport,
   onImport,
+  showAdvanced = false,
+  onToggleAdvanced,
 }) => {
   const {
     filters,
@@ -72,7 +78,9 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
   const [toDate, setToDate] = useState<Date | undefined>(
     filters.to_date ? new Date(filters.to_date) : undefined
   );
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvancedLocal, setShowAdvancedLocal] = useState(false);
+  const isAdvancedShowing = showAdvanced !== undefined ? showAdvanced : showAdvancedLocal;
+  const toggleAdvanced = onToggleAdvanced || (() => setShowAdvancedLocal(!showAdvancedLocal));
   const [categoryFilterSearch, setCategoryFilterSearch] = useState('');
   const [paymentMethodFilterSearch, setPaymentMethodFilterSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>(filters.tags || []);
@@ -482,10 +490,10 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
 
           <Button
             variant="outline"
-            onClick={() => setShowAdvanced(!showAdvanced)}
+            onClick={toggleAdvanced}
             className={cn(
               'flex items-center gap-2',
-              showAdvanced && 'bg-accent'
+              isAdvancedShowing && 'bg-accent'
             )}
           >
             <Filter className="h-4 w-4" />
@@ -535,14 +543,15 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
         </div>
       </div>
 
-      {showAdvanced && (
-        <div className="border rounded-lg p-6 space-y-6 bg-card">
+      {/* Advanced filters shown inline on smaller screens */}
+      {isAdvancedShowing && (
+        <div className="lg:hidden border rounded-lg p-6 space-y-6 bg-gray-50/50">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Advanced Filters & Settings</h3>
+            <h3 className="text-lg font-semibold">Advanced Filters</h3>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowAdvanced(false)}
+              onClick={toggleAdvanced}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -1042,6 +1051,644 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+export const AdvancedFilterPanel: React.FC<{
+  onClose?: () => void;
+  isInSidebar?: boolean;
+}> = ({ onClose, isInSidebar = true }) => {
+  const {
+    filters,
+    setFilters,
+    resetFilters,
+    categories,
+    paymentMethods,
+    filterVisibility,
+    tagSuggestions,
+    addTagSuggestion,
+    removeTagSuggestion,
+    clearTagSuggestions,
+    toggleFilter,
+  } = useTransactionStore();
+
+  const [categoryFilterSearch, setCategoryFilterSearch] = useState('');
+  const [paymentMethodFilterSearch, setPaymentMethodFilterSearch] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>(filters.tags || []);
+  const [tagInput, setTagInput] = useState('');
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const [fromDate, setFromDate] = useState<Date | undefined>(
+    filters.from_date ? new Date(filters.from_date) : undefined
+  );
+  const [toDate, setToDate] = useState<Date | undefined>(
+    filters.to_date ? new Date(filters.to_date) : undefined
+  );
+
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [showPaymentStatusFilter, setShowPaymentStatusFilter] = useState(false);
+  const [showPaymentMethodFilter, setShowPaymentMethodFilter] = useState(false);
+  const [showTagFilter, setShowTagFilter] = useState(false);
+  const [showTypeFilter, setShowTypeFilter] = useState(false);
+
+  const handleTypeToggle = (value: string) => {
+    if (value === 'all') {
+      setFilters({ type: [] });
+    } else {
+      toggleFilter('type', value);
+    }
+  };
+
+  const handleCategoryToggle = (categoryId: string) => {
+    if (categoryId === 'all') {
+      setFilters({ category: [] });
+    } else {
+      toggleFilter('category', categoryId);
+    }
+  };
+
+  const handleStatusToggle = (value: string) => {
+    if (value === 'all') {
+      setFilters({ payment_status: [] });
+    } else {
+      toggleFilter('payment_status', value);
+    }
+  };
+
+  const handlePaymentMethodToggle = (value: string) => {
+    if (value === 'all') {
+      setFilters({ payment_method: [] });
+    } else {
+      toggleFilter('payment_method', value);
+    }
+  };
+
+  const addTag = (tag?: string) => {
+    const tagToAdd = tag || tagInput.trim();
+    if (tagToAdd && !selectedTags.includes(tagToAdd)) {
+      const newTags = [...selectedTags, tagToAdd];
+      setSelectedTags(newTags);
+      setFilters({ tags: newTags });
+      addTagSuggestion(tagToAdd);
+      setTagInput('');
+      setShowTagSuggestions(false);
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    const newTags = selectedTags.filter(t => t !== tag);
+    setSelectedTags(newTags);
+    setFilters({ tags: newTags.length > 0 ? newTags : undefined });
+  };
+
+  const clearAllTags = () => {
+    setSelectedTags([]);
+    setFilters({ tags: undefined });
+  };
+
+  const getFilteredTagSuggestions = () => {
+    return tagSuggestions
+      .filter(suggestion =>
+        suggestion.value.toLowerCase().includes(tagInput.toLowerCase()) &&
+        !selectedTags.includes(suggestion.value)
+      )
+      .sort((a, b) => {
+        if (a.count !== b.count) {
+          return b.count - a.count;
+        }
+        return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
+      })
+      .slice(0, 10);
+  };
+
+  const handleReset = () => {
+    resetFilters();
+    setFromDate(undefined);
+    setToDate(undefined);
+    setSelectedTags([]);
+  };
+
+  const statusOptions = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'partial', label: 'Partial' },
+    { value: 'cancelled', label: 'Cancelled' },
+  ];
+
+  return (
+    <div className="h-full flex flex-col bg-gray-50/30 border-r">
+      <div className="flex items-center justify-between p-4 border-b bg-white/50">
+        <h3 className="font-semibold">Advanced Filters</h3>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="space-y-4">
+          {/* Filter fields rendered vertically */}
+          {filterVisibility.category && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Category</Label>
+              <Popover open={showCategoryFilter} onOpenChange={setShowCategoryFilter}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      (!Array.isArray(filters.category) || filters.category.length === 0) && 'text-muted-foreground'
+                    )}
+                  >
+                    <Filter className="mr-2 h-3 w-3" />
+                    <span className="text-xs">
+                      {Array.isArray(filters.category) && filters.category.length > 0
+                        ? `${filters.category.length} selected`
+                        : 'All Categories'
+                      }
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64" align="start">
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="Search categories..."
+                      value={categoryFilterSearch}
+                      onChange={(e) => setCategoryFilterSearch(e.target.value)}
+                      className="h-8"
+                    />
+                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="all-categories"
+                          checked={!Array.isArray(filters.category) || filters.category.length === 0}
+                          onCheckedChange={() => handleCategoryToggle('all')}
+                        />
+                        <label htmlFor="all-categories" className="text-xs font-medium">
+                          All Categories
+                        </label>
+                      </div>
+                      {categories
+                        .filter(category =>
+                          categoryFilterSearch === '' ||
+                          category.name.toLowerCase().includes(categoryFilterSearch.toLowerCase())
+                        )
+                        .map((category) => (
+                          <div key={category.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`category-${category.id}`}
+                              checked={Array.isArray(filters.category) && filters.category.includes(category.id)}
+                              onCheckedChange={() => handleCategoryToggle(category.id)}
+                            />
+                            <label htmlFor={`category-${category.id}`} className="text-xs">
+                              {category.name}
+                            </label>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          {/* Search */}
+          {filterVisibility.search && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Input
+                  placeholder="Search transactions..."
+                  value={filters.search || ''}
+                  onChange={(e) => setFilters({ search: e.target.value })}
+                  className="h-9 pl-9 text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Date Range */}
+          {filterVisibility.date_range && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Date Range</Label>
+              <div className="space-y-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'w-full justify-start text-left font-normal h-9',
+                        !fromDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-3 w-3" />
+                      <span className="text-xs">{fromDate ? format(fromDate, 'PP') : 'From date'}</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={fromDate}
+                      onSelect={(date) => {
+                        setFromDate(date);
+                        if (date) {
+                          setFilters({ from_date: format(date, 'yyyy-MM-dd') });
+                        } else {
+                          setFilters({ from_date: undefined });
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'w-full justify-start text-left font-normal h-9',
+                        !toDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-3 w-3" />
+                      <span className="text-xs">{toDate ? format(toDate, 'PP') : 'To date'}</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={toDate}
+                      onSelect={(date) => {
+                        setToDate(date);
+                        if (date) {
+                          setFilters({ to_date: format(date, 'yyyy-MM-dd') });
+                        } else {
+                          setFilters({ to_date: undefined });
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          )}
+
+          {/* Transaction Type */}
+          {filterVisibility.type && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Transaction Type</Label>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="all-types"
+                    checked={!Array.isArray(filters.type) || filters.type.length === 0}
+                    onCheckedChange={() => handleTypeToggle('all')}
+                  />
+                  <label htmlFor="all-types" className="text-xs font-medium">All Types</label>
+                </div>
+                {[
+                  { value: 'income', label: 'Income', icon: TrendingUp, color: 'text-green-600' },
+                  { value: 'expense', label: 'Expense', icon: TrendingDown, color: 'text-red-600' },
+                  { value: 'sale', label: 'Sale', icon: ShoppingCart, color: 'text-blue-600' },
+                  { value: 'purchase', label: 'Purchase', icon: Package, color: 'text-orange-600' },
+                ].map((option) => {
+                  const IconComponent = option.icon;
+                  return (
+                    <div key={option.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`type-${option.value}`}
+                        checked={Array.isArray(filters.type) && filters.type.includes(option.value)}
+                        onCheckedChange={() => handleTypeToggle(option.value)}
+                      />
+                      <label htmlFor={`type-${option.value}`} className="text-xs flex items-center gap-2">
+                        <IconComponent className={cn('h-3 w-3', option.color)} />
+                        {option.label}
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Payment Status */}
+          {filterVisibility.payment_status && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Payment Status</Label>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="all-statuses"
+                    checked={!Array.isArray(filters.payment_status) || filters.payment_status.length === 0}
+                    onCheckedChange={() => handleStatusToggle('all')}
+                  />
+                  <label htmlFor="all-statuses" className="text-xs font-medium">All Statuses</label>
+                </div>
+                {[
+                  { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
+                  { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
+                  { value: 'partial', label: 'Partial', color: 'bg-blue-100 text-blue-800' },
+                  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
+                ].map((option) => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`status-${option.value}`}
+                      checked={Array.isArray(filters.payment_status) && filters.payment_status.includes(option.value)}
+                      onCheckedChange={() => handleStatusToggle(option.value)}
+                    />
+                    <label htmlFor={`status-${option.value}`} className="text-xs">
+                      <span className={cn('px-2 py-0.5 rounded text-xs', option.color)}>
+                        {option.label}
+                      </span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Payment Method */}
+          {filterVisibility.payment_method && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Payment Method</Label>
+              <Popover open={showPaymentMethodFilter} onOpenChange={setShowPaymentMethodFilter}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      (!Array.isArray(filters.payment_method) || filters.payment_method.length === 0) && 'text-muted-foreground'
+                    )}
+                  >
+                    <CreditCard className="mr-2 h-3 w-3" />
+                    <span className="text-xs">
+                      {Array.isArray(filters.payment_method) && filters.payment_method.length > 0
+                        ? `${filters.payment_method.length} selected`
+                        : 'All Methods'
+                      }
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64" align="start">
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="Search payment methods..."
+                      value={paymentMethodFilterSearch}
+                      onChange={(e) => setPaymentMethodFilterSearch(e.target.value)}
+                      className="h-8"
+                    />
+                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="all-methods"
+                          checked={!Array.isArray(filters.payment_method) || filters.payment_method.length === 0}
+                          onCheckedChange={() => handlePaymentMethodToggle('all')}
+                        />
+                        <label htmlFor="all-methods" className="text-xs font-medium">All Methods</label>
+                      </div>
+                      {paymentMethods
+                        .filter(method =>
+                          paymentMethodFilterSearch === '' ||
+                          method.name.toLowerCase().includes(paymentMethodFilterSearch.toLowerCase())
+                        )
+                        .map((method) => (
+                          <div key={method.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`method-${method.id}`}
+                              checked={Array.isArray(filters.payment_method) && filters.payment_method.includes(method.id)}
+                              onCheckedChange={() => handlePaymentMethodToggle(method.id)}
+                            />
+                            <label htmlFor={`method-${method.id}`} className="text-xs">
+                              {method.name}
+                            </label>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          {/* Customer/Vendor */}
+          {filterVisibility.customer_vendor && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Customer/Vendor</Label>
+              <Input
+                placeholder="Search customer/vendor..."
+                value={filters.customer_vendor || ''}
+                onChange={(e) => setFilters({ customer_vendor: e.target.value })}
+                className="h-9 text-sm"
+              />
+            </div>
+          )}
+
+          {/* Tags */}
+          {filterVisibility.tags && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Tags</Label>
+              <Popover open={showTagFilter} onOpenChange={setShowTagFilter}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      'w-full justify-start text-left font-normal h-9',
+                      selectedTags.length === 0 && 'text-muted-foreground'
+                    )}
+                  >
+                    <Tags className="mr-2 h-3 w-3" />
+                    <span className="text-xs">
+                      {selectedTags.length > 0
+                        ? `${selectedTags.length} tags`
+                        : 'Add tags...'}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64" align="start">
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add tag..."
+                        value={tagInput}
+                        onChange={(e) => {
+                          setTagInput(e.target.value);
+                          setShowTagSuggestions(true);
+                        }}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addTag();
+                          }
+                        }}
+                        className="h-8 flex-1"
+                      />
+                      <Button onClick={() => addTag()} size="sm">
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+
+                    {showTagSuggestions && tagInput && getFilteredTagSuggestions().length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Suggestions:</p>
+                        <div className="max-h-[150px] overflow-y-auto space-y-1">
+                          {getFilteredTagSuggestions().map((suggestion) => (
+                            <div
+                              key={suggestion.value}
+                              className="flex items-center justify-between p-1.5 hover:bg-gray-100 rounded cursor-pointer text-xs"
+                              onClick={() => {
+                                addTag(suggestion.value);
+                                setTagInput('');
+                                setShowTagSuggestions(false);
+                              }}
+                            >
+                              <span>{suggestion.value}</span>
+                              <span className="text-muted-foreground text-xs">({suggestion.count})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedTags.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Selected tags:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedTags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-primary/10 text-primary rounded-full"
+                            >
+                              {tag}
+                              <button
+                                onClick={() => removeTag(tag)}
+                                className="hover:bg-primary/20 rounded-full p-0.5"
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          {/* Amount Range */}
+          {filterVisibility.amount_range && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Amount Range</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Min"
+                  value={filters.min_amount || ''}
+                  onChange={(e) => setFilters({ min_amount: e.target.value ? Number(e.target.value) : undefined })}
+                  className="flex-1 h-9 text-sm"
+                />
+                <Input
+                  type="number"
+                  placeholder="Max"
+                  value={filters.max_amount || ''}
+                  onChange={(e) => setFilters({ max_amount: e.target.value ? Number(e.target.value) : undefined })}
+                  className="flex-1 h-9 text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Reference Number */}
+          {filterVisibility.reference_number && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Reference Number</Label>
+              <Input
+                placeholder="Enter reference..."
+                value={filters.reference_number || ''}
+                onChange={(e) => setFilters({ reference_number: e.target.value })}
+                className="h-9 text-sm"
+              />
+            </div>
+          )}
+
+          {/* Invoice Number */}
+          {filterVisibility.invoice_number && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Invoice Number</Label>
+              <Input
+                placeholder="Enter invoice..."
+                value={filters.invoice_number || ''}
+                onChange={(e) => setFilters({ invoice_number: e.target.value })}
+                className="h-9 text-sm"
+              />
+            </div>
+          )}
+
+          {/* Special Filters */}
+          {(filterVisibility.tax_filter || filterVisibility.discount_filter || filterVisibility.recurring_filter) && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Special Filters</Label>
+              <div className="flex flex-wrap gap-2">
+                {filterVisibility.tax_filter && (
+                  <Button
+                    variant={filters.has_tax ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilters({ has_tax: filters.has_tax ? undefined : true })}
+                    className="h-8 text-xs"
+                  >
+                    Has Tax
+                  </Button>
+                )}
+                {filterVisibility.discount_filter && (
+                  <Button
+                    variant={filters.has_discount ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilters({ has_discount: filters.has_discount ? undefined : true })}
+                    className="h-8 text-xs"
+                  >
+                    Has Discount
+                  </Button>
+                )}
+                {filterVisibility.recurring_filter && (
+                  <Button
+                    variant={filters.is_recurring ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilters({ is_recurring: filters.is_recurring ? undefined : true })}
+                    className="h-8 text-xs"
+                  >
+                    Recurring
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="pt-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              className="w-full"
+            >
+              Reset All Filters
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
