@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { useAppStore } from '@/stores/useAppStore'
 import { Transactions } from '@/pages/Transactions'
+import { AddTransaction } from '@/pages/AddTransaction'
 import Settings from '@/pages/Settings'
 import { Toaster } from 'react-hot-toast'
 import './App.css'
@@ -25,6 +26,7 @@ function App() {
       <MainLayout>
         <Routes>
           <Route path="/" element={<Transactions />} />
+          <Route path="/transactions/add" element={<AddTransaction />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </MainLayout>

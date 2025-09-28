@@ -1,0 +1,133 @@
+/* Tiptap Editor Styles */
+.ProseMirror {
+  min-height: 120px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+/* Placeholder styles */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Typography styles */
+.ProseMirror h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror p {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid #e5e7eb;
+  padding-left: 1rem;
+  margin-left: 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.ProseMirror code {
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.ProseMirror pre {
+  background-color: #1f2937;
+  border-radius: 0.375rem;
+  color: #f9fafb;
+  font-family: monospace;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.ProseMirror pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+/* Strong text */
+.ProseMirror strong {
+  font-weight: 600;
+}
+
+/* Italic text */
+.ProseMirror em {
+  font-style: italic;
+}
+
+/* Links */
+.ProseMirror a {
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ProseMirror a:hover {
+  color: #2563eb;
+}
+
+/* Selection */
+.ProseMirror ::selection {
+  background-color: #bfdbfe;
+}
+
+/* Horizontal rule */
+.ProseMirror hr {
+  border: 0;
+  border-top: 2px solid #e5e7eb;
+  margin: 1rem 0;
+}

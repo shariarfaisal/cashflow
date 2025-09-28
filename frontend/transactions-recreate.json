@@ -1,0 +1,514 @@
+{
+    "project": "Business Transaction Voucher Form - React Implementation",
+    "description": "Create a professional voucher-style transaction form for desktop business application",
+    "techStack": {
+      "framework": "React",
+      "styling": "CSS-in-JS or styled-components or inline styles",
+      "stateManagement": "useState hooks",
+      "icons": "Use emoji or react-icons if needed"
+    },
+    "globalStyles": {
+      "bodyBackground": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      "minHeight": "100vh",
+      "padding": "20px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    },
+    "mainContainer": {
+      "className": "voucher-container",
+      "styles": {
+        "maxWidth": "1200px",
+        "margin": "0 auto",
+        "background": "white",
+        "borderRadius": "20px",
+        "boxShadow": "0 20px 60px rgba(0, 0, 0, 0.15)",
+        "overflow": "hidden"
+      }
+    },
+    "components": {
+      "TransactionTabs": {
+        "description": "Top navigation tabs for transaction types",
+        "container": {
+          "display": "flex",
+          "background": "#f8f9fa",
+          "borderBottom": "1px solid #e9ecef"
+        },
+        "tabs": [
+          { "name": "Income", "icon": "📈" },
+          { "name": "Expense", "icon": "📉", "defaultActive": true },
+          { "name": "Sale", "icon": "🛒" },
+          { "name": "Purchase", "icon": "📦" }
+        ],
+        "tabStyles": {
+          "default": {
+            "flex": 1,
+            "padding": "20px",
+            "textAlign": "center",
+            "cursor": "pointer",
+            "border": "none",
+            "background": "transparent",
+            "fontSize": "16px",
+            "fontWeight": "500",
+            "color": "#6c757d",
+            "transition": "all 0.3s ease",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "gap": "8px"
+          },
+          "hover": {
+            "background": "rgba(0, 0, 0, 0.03)"
+          },
+          "active": {
+            "background": "#fff",
+            "color": "#e74c3c",
+            "borderBottom": "3px solid #e74c3c",
+            "marginBottom": "-1px"
+          }
+        }
+      },
+      "VoucherHeader": {
+        "description": "Header section with gradient background",
+        "container": {
+          "background": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          "padding": "30px 40px",
+          "color": "white"
+        },
+        "topSection": {
+          "display": "flex",
+          "justifyContent": "space-between",
+          "alignItems": "center",
+          "marginBottom": "20px"
+        },
+        "title": {
+          "fontSize": "28px",
+          "fontWeight": "600",
+          "letterSpacing": "1px",
+          "dynamicText": "{{TRANSACTION_TYPE}} VOUCHER"
+        },
+        "voucherNumber": {
+          "background": "rgba(255, 255, 255, 0.2)",
+          "padding": "8px 16px",
+          "borderRadius": "25px",
+          "fontSize": "14px",
+          "text": "EXP-2025-0001"
+        },
+        "headerFields": {
+          "gridLayout": "grid",
+          "gridTemplateColumns": "1fr 1fr auto",
+          "gap": "30px",
+          "fields": [
+            {
+              "label": "Customer / Vendor",
+              "type": "input",
+              "placeholder": "Enter customer or vendor name"
+            },
+            {
+              "label": "Payment Method",
+              "type": "select",
+              "options": ["None", "Cash", "Bank Transfer", "Credit Card", "Cheque"]
+            },
+            {
+              "label": "Date",
+              "type": "date",
+              "defaultValue": "current date",
+              "textAlign": "right"
+            }
+          ],
+          "labelStyles": {
+            "fontSize": "12px",
+            "opacity": "0.9",
+            "textTransform": "uppercase",
+            "letterSpacing": "1px",
+            "color": "white"
+          },
+          "inputStyles": {
+            "background": "rgba(255, 255, 255, 0.95)",
+            "border": "none",
+            "padding": "12px 16px",
+            "borderRadius": "8px",
+            "fontSize": "16px",
+            "color": "#2c3e50",
+            "fontWeight": "500"
+          }
+        }
+      },
+      "VoucherBody": {
+        "container": {
+          "padding": "40px"
+        },
+        "layout": {
+          "display": "grid",
+          "gridTemplateColumns": "2fr 1fr",
+          "gap": "40px"
+        },
+        "leftColumn": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "25px",
+          "sections": [
+            {
+              "name": "AmountSection",
+              "styles": {
+                "background": "#f8f9fa",
+                "padding": "25px",
+                "borderRadius": "12px",
+                "marginBottom": "10px"
+              },
+              "content": {
+                "display": "flex",
+                "alignItems": "center",
+                "gap": "10px",
+                "currencySymbol": {
+                  "fontSize": "32px",
+                  "color": "#667eea",
+                  "fontWeight": "600",
+                  "text": "$"
+                },
+                "input": {
+                  "flex": 1,
+                  "fontSize": "36px",
+                  "fontWeight": "600",
+                  "border": "none",
+                  "background": "transparent",
+                  "color": "#2c3e50",
+                  "outline": "none",
+                  "placeholder": "0.00",
+                  "type": "number",
+                  "step": "0.01"
+                }
+              }
+            },
+            {
+              "name": "Description",
+              "label": {
+                "text": "DESCRIPTION",
+                "fontSize": "14px",
+                "fontWeight": "600",
+                "color": "#495057",
+                "textTransform": "uppercase",
+                "letterSpacing": "0.5px"
+              },
+              "textarea": {
+                "minHeight": "120px",
+                "padding": "15px",
+                "border": "2px solid #e9ecef",
+                "borderRadius": "10px",
+                "fontSize": "15px",
+                "resize": "vertical",
+                "placeholder": "Enter detailed transaction description...",
+                "focusBorderColor": "#667eea"
+              }
+            },
+            {
+              "name": "Tags",
+              "label": "TAGS",
+              "container": {
+                "display": "flex",
+                "gap": "10px",
+                "flexWrap": "wrap",
+                "alignItems": "center"
+              },
+              "input": {
+                "flex": 1,
+                "padding": "10px 15px",
+                "border": "2px solid #e9ecef",
+                "borderRadius": "8px",
+                "fontSize": "15px",
+                "placeholder": "Add a tag"
+              },
+              "addButton": {
+                "padding": "10px 20px",
+                "background": "#667eea",
+                "color": "white",
+                "border": "none",
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "fontSize": "18px",
+                "text": "+",
+                "hoverBackground": "#5a67d8"
+              }
+            },
+            {
+              "name": "Category",
+              "label": "CATEGORY",
+              "addLink": {
+                "color": "#667eea",
+                "fontSize": "14px",
+                "fontWeight": "500",
+                "text": "+ Add"
+              },
+              "select": {
+                "padding": "12px 15px",
+                "border": "2px solid #e9ecef",
+                "borderRadius": "8px",
+                "fontSize": "15px",
+                "background": "white",
+                "options": ["None", "Office Supplies", "Travel", "Utilities", "Marketing"]
+              }
+            }
+          ]
+        },
+        "rightColumn": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "25px",
+          "sections": [
+            {
+              "name": "PaymentStatus",
+              "label": "PAYMENT STATUS",
+              "buttonGroup": {
+                "display": "grid",
+                "gridTemplateColumns": "repeat(3, 1fr)",
+                "gap": "10px",
+                "buttons": [
+                  {
+                    "text": "Pending",
+                    "defaultActive": true,
+                    "activeStyles": {
+                      "background": "#f39c12",
+                      "color": "white",
+                      "borderColor": "#f39c12"
+                    }
+                  },
+                  {
+                    "text": "Completed",
+                    "activeStyles": {
+                      "background": "#28a745",
+                      "color": "white",
+                      "borderColor": "#28a745"
+                    }
+                  },
+                  {
+                    "text": "Failed",
+                    "activeStyles": {
+                      "background": "#dc3545",
+                      "color": "white",
+                      "borderColor": "#dc3545"
+                    }
+                  }
+                ],
+                "defaultButtonStyles": {
+                  "padding": "12px",
+                  "border": "2px solid #e9ecef",
+                  "background": "white",
+                  "borderRadius": "8px",
+                  "cursor": "pointer",
+                  "fontWeight": "500",
+                  "transition": "all 0.3s"
+                }
+              }
+            },
+            {
+              "name": "ReferenceNumber",
+              "label": "REFERENCE NUMBER",
+              "input": {
+                "padding": "12px 15px",
+                "border": "2px solid #e9ecef",
+                "borderRadius": "8px",
+                "fontSize": "15px",
+                "placeholder": "Enter reference #"
+              }
+            },
+            {
+              "name": "AmountsGrid",
+              "container": {
+                "display": "grid",
+                "gridTemplateColumns": "repeat(3, 1fr)",
+                "gap": "15px",
+                "background": "#f8f9fa",
+                "padding": "20px",
+                "borderRadius": "12px"
+              },
+              "fields": [
+                {
+                  "label": "+ Tax Amount",
+                  "defaultValue": 0,
+                  "type": "number"
+                },
+                {
+                  "label": "− Discount",
+                  "defaultValue": 0,
+                  "type": "number"
+                },
+                {
+                  "label": "$ Due Amount",
+                  "defaultValue": 0,
+                  "type": "number",
+                  "readOnly": true,
+                  "autoCalculate": true
+                }
+              ],
+              "fieldStyles": {
+                "label": {
+                  "fontSize": "12px",
+                  "color": "#6c757d"
+                },
+                "input": {
+                  "padding": "10px",
+                  "border": "1px solid #dee2e6",
+                  "borderRadius": "6px",
+                  "fontSize": "16px",
+                  "fontWeight": "500",
+                  "background": "white"
+                }
+              }
+            },
+            {
+              "name": "InvoiceNumber",
+              "label": "INVOICE NUMBER",
+              "input": {
+                "padding": "12px 15px",
+                "border": "2px solid #e9ecef",
+                "borderRadius": "8px",
+                "fontSize": "15px",
+                "placeholder": "Enter invoice number"
+              }
+            },
+            {
+              "name": "RecurringToggle",
+              "container": {
+                "background": "#f8f9fa",
+                "padding": "20px",
+                "borderRadius": "12px"
+              },
+              "toggleSwitch": {
+                "display": "flex",
+                "alignItems": "center",
+                "gap": "10px",
+                "padding": "15px",
+                "background": "white",
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "switchStyles": {
+                  "width": "50px",
+                  "height": "26px",
+                  "backgroundInactive": "#dee2e6",
+                  "backgroundActive": "#667eea",
+                  "borderRadius": "13px",
+                  "knobSize": "22px",
+                  "knobColor": "white",
+                  "transitionDuration": "0.3s"
+                },
+                "label": "Recurring Transaction"
+              }
+            }
+          ]
+        },
+        "notesSection": {
+          "gridColumn": "1 / -1",
+          "marginTop": "20px",
+          "label": "NOTES",
+          "textarea": {
+            "width": "100%",
+            "minHeight": "100px",
+            "padding": "15px",
+            "border": "2px solid #e9ecef",
+            "borderRadius": "10px",
+            "fontSize": "15px",
+            "resize": "vertical",
+            "placeholder": "Add any additional notes or special instructions..."
+          }
+        }
+      },
+      "ActionButtons": {
+        "container": {
+          "display": "flex",
+          "gap": "20px",
+          "justifyContent": "flex-end",
+          "padding": "30px 40px",
+          "background": "#f8f9fa",
+          "borderTop": "1px solid #e9ecef"
+        },
+        "cancelButton": {
+          "padding": "14px 40px",
+          "fontSize": "16px",
+          "fontWeight": "500",
+          "border": "2px solid #e9ecef",
+          "borderRadius": "10px",
+          "cursor": "pointer",
+          "background": "white",
+          "color": "#6c757d",
+          "hoverBackground": "#f8f9fa",
+          "text": "Cancel"
+        },
+        "primaryButton": {
+          "padding": "14px 40px",
+          "fontSize": "16px",
+          "fontWeight": "500",
+          "border": "none",
+          "borderRadius": "10px",
+          "cursor": "pointer",
+          "background": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          "color": "white",
+          "minWidth": "200px",
+          "text": "Create {{TRANSACTION_TYPE}}",
+          "hoverEffects": {
+            "transform": "translateY(-2px)",
+            "boxShadow": "0 10px 30px rgba(102, 126, 234, 0.4)"
+          }
+        }
+      }
+    },
+    "functionality": {
+      "state": {
+        "activeTab": "Expense",
+        "formData": {
+          "amount": 0,
+          "customerVendor": "",
+          "paymentMethod": "None",
+          "date": "current date",
+          "description": "",
+          "tags": [],
+          "category": "None",
+          "paymentStatus": "Pending",
+          "referenceNumber": "",
+          "taxAmount": 0,
+          "discountAmount": 0,
+          "dueAmount": 0,
+          "invoiceNumber": "",
+          "isRecurring": false,
+          "notes": ""
+        }
+      },
+      "interactions": {
+        "tabSwitching": "Update active tab and change voucher title/button text accordingly",
+        "autoCalculation": "Due Amount = Main Amount + Tax Amount - Discount Amount",
+        "paymentStatusToggle": "Only one status can be active at a time",
+        "recurringToggle": "Animate switch position when toggled",
+        "formValidation": "Validate required fields before submission",
+        "focusStates": "Border color changes to #667eea on focus"
+      },
+      "animations": {
+        "transitions": "all 0.3s ease",
+        "hoverEffects": "Transform and shadow on buttons",
+        "focusEffects": "Border color transitions"
+      }
+    },
+    "colorPalette": {
+      "primary": "#667eea",
+      "primaryDark": "#5a67d8",
+      "secondary": "#764ba2",
+      "success": "#28a745",
+      "warning": "#f39c12",
+      "danger": "#dc3545",
+      "light": "#f8f9fa",
+      "border": "#e9ecef",
+      "text": {
+        "primary": "#2c3e50",
+        "secondary": "#495057",
+        "muted": "#6c757d"
+      }
+    },
+    "responsiveNotes": "This is designed for desktop view with minimum 1200px width",
+    "additionalRequirements": [
+      "All form inputs should be controlled components with state management",
+      "Include proper event handlers for all interactive elements",
+      "Implement smooth animations and transitions",
+      "Ensure accessibility with proper labels and ARIA attributes",
+      "Use semantic HTML elements",
+      "Include hover and focus states for all interactive elements",
+      "The voucher number should auto-generate based on transaction type",
+      "Date should default to today's date",
+      "All number inputs should handle decimal values properly"
+    ]
+  }

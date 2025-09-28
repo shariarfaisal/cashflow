@@ -1024,7 +1024,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               disabled={loading}
               className="flex-1 h-12 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium flex items-center justify-center gap-2"
             >
-              {loading ? 'Saving...' : `Create ${transactionType.charAt(0).toUpperCase() + transactionType.slice(1)}`}
+              {loading ? 'Saving...' : mode === 'create' ? `Create ${transactionType.charAt(0).toUpperCase() + transactionType.slice(1)}` : 'Update Transaction'}
             </Button>
       </div>
     </>

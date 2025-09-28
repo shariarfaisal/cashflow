@@ -1,14 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, RefreshCw, PanelRightClose, PanelRightOpen, Filter } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from '@/components/ui/resizable';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +28,7 @@ import {
   ListPaymentMethods,
 } from '../../wailsjs/go/main/App';
 import toast from 'react-hot-toast';
-import { TransactionResponse, CreateTransactionParams, UpdateTransactionParams } from '@/types/transactions';
+import { TransactionResponse, UpdateTransactionParams } from '@/types/transactions';
 
 export const Transactions: React.FC = () => {
   const {
@@ -46,7 +39,6 @@ export const Transactions: React.FC = () => {
     pageSize,
     viewMode,
     showForm,
-    formMode,
     selectedTransaction,
     isLoading,
     setTransactions,
@@ -54,18 +46,14 @@ export const Transactions: React.FC = () => {
     setCategories,
     setLoading,
     setShowForm,
-    setFormMode,
     setSelectedTransaction,
     setTotalCount,
     setCurrentPage,
     setPageSize,
     getTotalPages,
     setPaymentMethods,
-    sidebarMode,
-    setSidebarMode,
   } = useTransactionStore();
 
-  const [refreshing, setRefreshing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -75,21 +63,17 @@ export const Transactions: React.FC = () => {
     setShowAdvancedFilters(!showAdvancedFilters);
   };
 
-  // Check if screen is large enough for sidebar features (1200px+)
+  // Check if screen is large enough for advanced filters sidebar (1200px+)
   useEffect(() => {
     const checkScreenSize = () => {
       const isLarge = window.innerWidth >= 1200;
       setIsLargeScreen(isLarge);
-      // Disable sidebar mode on smaller screens
-      if (!isLarge && sidebarMode) {
-        setSidebarMode(false);
-      }
     };
 
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
-  }, [sidebarMode, setSidebarMode]);
+  }, []);
 
   useEffect(() => {
     loadTransactions();
@@ -191,22 +175,10 @@ export const Transactions: React.FC = () => {
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await Promise.all([loadTransactions(), loadStats(), loadCategories(), loadPaymentMethods()]);
-    setRefreshing(false);
-    toast.success('Data refreshed');
-  };
 
-  const handleAddTransaction = () => {
-    setSelectedTransaction(null);
-    setFormMode('create');
-    setShowForm(true);
-  };
 
   const handleEditTransaction = (transaction: TransactionResponse) => {
     setSelectedTransaction(transaction);
-    setFormMode('edit');
     setShowForm(true);
   };
 
@@ -245,10 +217,10 @@ export const Transactions: React.FC = () => {
     }
   };
 
-  const handleFormSubmit = async (data: CreateTransactionParams | UpdateTransactionParams) => {
+  const handleFormSubmit = async (data: UpdateTransactionParams) => {
     try {
-      if (formMode === 'create') {
-        const createData = {
+      if (selectedTransaction) {
+        const updateData = {
           ...data,
           category: data.category || '',
           tags: data.tags || [],
@@ -266,38 +238,12 @@ export const Transactions: React.FC = () => {
           is_recurring: data.is_recurring || false,
           recurring_frequency: data.recurring_frequency || '',
           recurring_end_date: data.recurring_end_date || '',
-          parent_transaction_id: '',
-          created_by: '',
         } as any;
-        await CreateTransaction(createData);
-        toast.success('Transaction created successfully');
-      } else {
-        if (selectedTransaction) {
-          const updateData = {
-            ...data,
-            category: data.category || '',
-            tags: data.tags || [],
-            customer_vendor: data.customer_vendor || '',
-            payment_method: data.payment_method || '',
-            payment_status: data.payment_status || 'pending',
-            reference_number: data.reference_number || '',
-            invoice_number: data.invoice_number || '',
-            notes: data.notes || '',
-            attachments: data.attachments || [],
-            tax_amount: data.tax_amount || 0,
-            discount_amount: data.discount_amount || 0,
-            currency: data.currency || 'USD',
-            exchange_rate: data.exchange_rate || 1,
-            is_recurring: data.is_recurring || false,
-            recurring_frequency: data.recurring_frequency || '',
-            recurring_end_date: data.recurring_end_date || '',
-          } as any;
-          await UpdateTransaction(selectedTransaction.id, updateData);
-          toast.success('Transaction updated successfully');
-        }
+        await UpdateTransaction(selectedTransaction.id, updateData);
+        toast.success('Transaction updated successfully');
+        await loadTransactions();
+        await loadStats();
       }
-      await loadTransactions();
-      await loadStats();
     } catch (error) {
       console.error('Error saving transaction:', error);
       toast.error('Failed to save transaction');
@@ -380,43 +326,6 @@ export const Transactions: React.FC = () => {
 
   const mainContent = (
     <div className="space-y-6 p-4">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
-          <p className="text-gray-600 mt-1">Manage and track all your financial transactions</p>
-        </div>
-        <div className="flex items-center gap-4">
-          {/* Only show sidebar mode switch on large screens (1200px+) */}
-          {isLargeScreen && (
-            <div className="flex items-center gap-2">
-              <Label htmlFor="sidebar-mode" className="text-sm text-gray-600">
-                Sidebar Form
-              </Label>
-              <Switch
-                id="sidebar-mode"
-                checked={sidebarMode}
-                onCheckedChange={setSidebarMode}
-                aria-label="Toggle sidebar mode for transaction form"
-              />
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-            </Button>
-            <Button onClick={handleAddTransaction}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Transaction
-            </Button>
-          </div>
-        </div>
-      </div>
 
       <TransactionStats stats={stats} loading={isLoading} />
 
@@ -448,16 +357,14 @@ export const Transactions: React.FC = () => {
         onView={handleViewTransaction}
       />
 
-      {!sidebarMode && (
-        <TransactionForm
-          transaction={selectedTransaction}
-          open={showForm}
-          onClose={() => setShowForm(false)}
-          onSubmit={handleFormSubmit}
-          mode={formMode}
-          closeAfterSubmit={false}
-        />
-      )}
+      <TransactionForm
+        transaction={selectedTransaction}
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={handleFormSubmit}
+        mode="edit"
+        closeAfterSubmit={false}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -483,7 +390,7 @@ export const Transactions: React.FC = () => {
   );
 
   // Layout with advanced filters sidebar on large screens
-  const contentWithSidebar = (
+  return (
     <div className="flex h-full">
       {/* Advanced Filters Sidebar - Only show on screens 1200px+ */}
       {showAdvancedFilters && isLargeScreen && (
@@ -498,43 +405,4 @@ export const Transactions: React.FC = () => {
       </div>
     </div>
   );
-
-  // If sidebar mode is enabled, form is showing, and screen is large enough, use resizable panels
-  if (sidebarMode && showForm && isLargeScreen) {
-    return (
-      <ResizablePanelGroup direction="horizontal" className="h-full">
-        <ResizablePanel defaultSize={65} minSize={50} maxSize={80}>
-          {contentWithSidebar}
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={35} minSize={20} maxSize={50}>
-          <div className="h-full overflow-auto p-6 bg-gray-50">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                {formMode === 'create' ? 'New Transaction' : 'Edit Transaction'}
-              </h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowForm(false)}
-              >
-                <PanelRightClose className="h-4 w-4" />
-              </Button>
-            </div>
-            <TransactionForm
-              transaction={selectedTransaction}
-              open={true}
-              onClose={() => setShowForm(false)}
-              onSubmit={handleFormSubmit}
-              mode={formMode}
-              isInSidebar={true}
-              closeAfterSubmit={false}
-            />
-          </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    );
-  }
-
-  return contentWithSidebar;
 };

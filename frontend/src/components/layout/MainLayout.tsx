@@ -1,9 +1,9 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Sun, Moon, Settings, Receipt } from 'lucide-react'
+import { Sun, Moon, Settings, Receipt, Plus, RefreshCw } from 'lucide-react'
 import { useAppStore } from '@/stores/useAppStore'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -13,6 +13,7 @@ interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({ children, className }) => {
   const { theme, toggleTheme } = useAppStore()
   const location = useLocation()
+  const navigate = useNavigate()
 
   return (
     <div className={cn("min-h-screen bg-background", className)}>
@@ -42,18 +43,37 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, className }) =
                 </Link>
               </nav>
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-9 w-9"
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
+            <div className="flex items-center gap-2">
+              {location.pathname === '/' && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => window.location.reload()}
+                  className="h-9 w-9"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
               )}
-            </Button>
+              <Button
+                onClick={() => navigate('/transactions/add')}
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Transaction
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleTheme}
+                className="h-9 w-9"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
